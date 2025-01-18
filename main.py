@@ -2,6 +2,7 @@ import asyncio
 import os
 from aiogram import Bot, Dispatcher
 from app.handlers import router
+import torch
 
 async def main():
     bot = Bot(token=os.environ["bot_token"])
