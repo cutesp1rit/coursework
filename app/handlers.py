@@ -1,53 +1,80 @@
 from aiogram import F, Router
-from aiogram.types import Message, CallbackQuery
-from aiogram.filters import CommandStart, Command
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.context import FSMContext
+from aiogram.types import Message, FSInputFile
+from aiogram.filters import CommandStart
+import torch
 from TTS.api import TTS
+import os
 
 router = Router()
 
+# Папки для сохранения входящих и исходящих голосовых сообщений
+voice_input_dir = "/usr/src/app/tg_bot/voice_input"
+voice_output_dir = "/usr/src/app/tg_bot/voice_files"
+
+# Убедиться, что папки существуют
+os.makedirs(voice_input_dir, exist_ok=True)
+os.makedirs(voice_output_dir, exist_ok=True)
+
 @router.message(CommandStart())
 async def cmd_start(message: Message):
-    await message.answer(f"Привет! Чтобы пользоваться полным функционалом бота.. Вот здесь модели {TTS().list_models()}")
+    await message.answer("Привет! Отправьте файл в формате WAV, чтобы бот его обработал.")
 
-@router.message(Command('help'))
-async def cmd_help(message: Message):
-    await message.answer('Возможные вопросы и ответы к ним...')
-    # something
+@router.message(F.text)
+async def handle_text_message(message: Message):
+    # Определяем устройство (CPU или CUDA)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
-@router.message(Command('vm'))
-async def cmd_vm(message: Message):
-    await message.answer('')
-    # проверка на наличие голоса пользователя в БД
+    # Инициализируем TTS модель для клонирования голоса
+    tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
 
-    # отправляем с дефолтным если что
+    # Текст для синтеза
+    text = message.text
+    output_path = os.path.join(voice_output_dir, f"{message.from_user.id}_cloned.wav")
+    # Выберите спикера
+    speaker = "Abrahan Mack"  # Или "Ana Florence" "Craig Gutsy" для женского голоса
+    language = "ru"  # Укажите язык (русский)
 
-@router.message(Command('vd'))
-async def cmd_vd(message: Message):
-    await message.answer('')
+    # Генерация речи
+    tts.tts_to_file(text=text, speaker=speaker, language=language, file_path=output_path)
 
-    # проверяем на то, что сообщение не слишком давнее + количество сообщений (флаг) парсим
+    # Отправляем сгенерированное голосовое сообщение обратно пользователю
+    voice_file = FSInputFile(output_path)
+    await message.answer_voice(voice_file)
+    
+@router.message(F.document)
+async def process_voice_file(message: Message):
+    try:
+        # Получаем информацию о присланном файле
+        document = message.document
 
-@router.message(Command('vmm'))
-async def cmd_vmm(message: Message):
-    await message.answer('')
-    # поменять флаг в бд
+        # Путь для сохранения входящего файла
+        wav_path = os.path.join(voice_input_dir, f"{message.from_user.id}_input.wav")
+        output_path = os.path.join(voice_output_dir, f"{message.from_user.id}_cloned.wav")
 
-@router.message(Command('stop_vmm'))
-async def cmd_stop_vmm(message: Message):
-    await message.answer('')
-    # поменять флаг в бд
+        # Скачиваем файл на сервер
+        file_info = await message.bot.get_file(document.file_id)
+        file_url = file_info.file_path
+        await message.bot.download_file(file_url, destination=wav_path)
 
-@router.message(Command('changevoice'))
-async def cmd_changevoice(message: Message):
-    await message.answer('')
+        # Определяем устройство (CPU или CUDA)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # запросить у пользователя файл + проверка на корректность типа файла
-    # занесение голосового сообщения в базу данных
+        # Инициализируем TTS модель для клонирования голоса
+        tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
 
-@router.message(Command('del'))
-async def cmd_del(message: Message):
-    await message.answer('')
+        # Текст для генерации
+        text_to_say = "Привет! У тебя получилось! Все работает!"
+        tts.tts_to_file(
+            text=text_to_say,
+            speaker_wav=wav_path,  # Используем голос из присланного файла
+            file_path=output_path,
+            language="ru"  # Указываем язык текста
+        )
 
-    # удаляет пользователя из базы данных
+        # Отправляем сгенерированное голосовое сообщение обратно пользователю
+        voice_file = FSInputFile(output_path)
+        await message.answer_voice(voice_file)
+
+    except Exception as e:
+        # Отправляем сообщение об ошибке
+        await message.answer(f"Произошла ошибка при обработке файла: {e}")
