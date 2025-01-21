@@ -1,80 +1,108 @@
 from aiogram import F, Router
-from aiogram.types import Message, FSInputFile
-from aiogram.filters import CommandStart
-import torch
-from TTS.api import TTS
-import os
+from aiogram.types import Message, CallbackQuery
+from aiogram.filters import CommandStart, Command
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
 
 router = Router()
 
-# Папки для сохранения входящих и исходящих голосовых сообщений
-voice_input_dir = "/usr/src/app/tg_bot/voice_input"
-voice_output_dir = "/usr/src/app/tg_bot/voice_files"
-
-# Убедиться, что папки существуют
-os.makedirs(voice_input_dir, exist_ok=True)
-os.makedirs(voice_output_dir, exist_ok=True)
-
+# команда start
 @router.message(CommandStart())
 async def cmd_start(message: Message):
-    await message.answer("Привет! Отправьте файл в формате WAV, чтобы бот его обработал.")
+    # описание бота и его команд
 
-@router.message(F.text)
-async def handle_text_message(message: Message):
-    # Определяем устройство (CPU или CUDA)
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    chat_type = message.chat.type
 
-    # Инициализируем TTS модель для клонирования голоса
-    tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
+    if chat_type == 'private':
+        # это личный чат
+        await message.reply("Это личный чат.")
+    elif chat_type in ['group', 'supergroup']:
+        # это групповой чат
+        await message.reply("Это групповой чат.")
+    else:
+        # в таком случае не реагируем
+        return
 
-    # Текст для синтеза
-    text = message.text
-    output_path = os.path.join(voice_output_dir, f"{message.from_user.id}_cloned.wav")
-    # Выберите спикера
-    speaker = "Abrahan Mack"  # Или "Ana Florence" "Craig Gutsy" для женского голоса
-    language = "ru"  # Укажите язык (русский)
-
-    # Генерация речи
-    tts.tts_to_file(text=text, speaker=speaker, language=language, file_path=output_path)
-
-    # Отправляем сгенерированное голосовое сообщение обратно пользователю
-    voice_file = FSInputFile(output_path)
-    await message.answer_voice(voice_file)
+# команда help
+@router.message(Command('help'))
+async def cmd_help(message: Message):
+    # возможные ответы на вопросы
     
-@router.message(F.document)
-async def process_voice_file(message: Message):
-    try:
-        # Получаем информацию о присланном файле
-        document = message.document
+    chat_type = message.chat.type
 
-        # Путь для сохранения входящего файла
-        wav_path = os.path.join(voice_input_dir, f"{message.from_user.id}_input.wav")
-        output_path = os.path.join(voice_output_dir, f"{message.from_user.id}_cloned.wav")
+    if chat_type == 'private':
+        # это личный чат
+        await message.reply("Это личный чат.")
+    elif chat_type in ['group', 'supergroup']:
+        # это групповой чат
+        await message.reply("Это групповой чат.")
+    else:
+        # в таком случае не реагируем
+        return
 
-        # Скачиваем файл на сервер
-        file_info = await message.bot.get_file(document.file_id)
-        file_url = file_info.file_path
-        await message.bot.download_file(file_url, destination=wav_path)
+# команда voice message (отправляет сгенерированное аудио)
+@router.message(Command('vm'))
+async def cmd_vm(message: Message):
+    if message.reply_to_message:
+        # Получаем сообщение, на которое отвечает пользователь
+        replied_message = message.reply_to_message
 
-        # Определяем устройство (CPU или CUDA)
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-
-        # Инициализируем TTS модель для клонирования голоса
-        tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
-
-        # Текст для генерации
-        text_to_say = "Привет! У тебя получилось! Все работает!"
-        tts.tts_to_file(
-            text=text_to_say,
-            speaker_wav=wav_path,  # Используем голос из присланного файла
-            file_path=output_path,
-            language="ru"  # Указываем язык текста
+        # Отправляем информацию о сообщении, на которое отвечено
+        await message.reply(
+            f"Вы ответили на сообщение: \n"
+            f"Текст: {replied_message.text or 'Нет текста'}\n"
+            f"Отправитель: {replied_message.from_user.full_name}"
         )
+    else:
+        # Если команда вызвана без ответа на сообщение
+        await message.reply("Вы должны использовать эту команду как ответ на сообщение.")
+    # проверка на наличие голоса пользователя в БД
+    # отправляем с дефолтным если что
 
-        # Отправляем сгенерированное голосовое сообщение обратно пользователю
-        voice_file = FSInputFile(output_path)
-        await message.answer_voice(voice_file)
+# команда voice dialogue (генерирует диалог)
+@router.message(Command('vd'))
+async def cmd_vd(message: Message):
+    # проверяем на то, что сообщение не слишком давнее + количество сообщений (флаг) парсим
 
-    except Exception as e:
-        # Отправляем сообщение об ошибке
-        await message.answer(f"Произошла ошибка при обработке файла: {e}")
+    # проверка на групповой чат
+    chat_type = message.chat.type
+
+    if chat_type in ['group', 'supergroup']:
+        # это групповой чат
+        await message.reply("Это групповой чат.")
+    else:
+        # в таком случае не реагируем
+        return
+    
+# команда voice message mode (по)
+@router.message(Command('vmm'))
+async def cmd_vmm(message: Message):
+    # проверка на личный чат
+    await message.answer('')
+    # поменять флаг в бд
+
+@router.message(Command('stop_vmm'))
+async def cmd_stop_vmm(message: Message):
+    # проверка на личный чат
+    await message.answer('')
+    # поменять флаг в бд
+
+@router.message(Command('changevoice'))
+async def cmd_changevoice(message: Message):
+    # проверка на личный чат
+    await message.answer('')
+    # запросить у пользователя файл + проверка на корректность типа файла
+    # возможно добавить возможность с дефолтным голосом?
+    # занесение голосового сообщения в базу данных
+
+@router.message(Command('del'))
+async def cmd_del(message: Message):
+    # проверка на личный чат
+    await message.answer('')
+    # удаляет пользователя из базы данных (то есть все, что было в регистарции??)
+
+@router.message(Command('registration'))
+async def cmd_registration(message: Message):
+    # проверка на личный чат
+    await message.answer('')
+    # регистрирует пользователя в базу данных
