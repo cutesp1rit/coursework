@@ -3,6 +3,9 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
+from database.database import Database
+
+import asyncpg
 
 router = Router()
 
@@ -74,35 +77,91 @@ async def cmd_vd(message: Message):
         # в таком случае не реагируем
         return
     
-# команда voice message mode (по)
+# команда voice message mode (устанавливаем "мод" постоянной генерации аудиосообщений на любой текст)
 @router.message(Command('vmm'))
-async def cmd_vmm(message: Message):
-    # проверка на личный чат
-    await message.answer('')
+async def cmd_vmm(message: Message):\
+
+    chat_type = message.chat.type
+
+    if chat_type == 'private':
+        # это личный чат
+        await message.reply("Это личный чат.")
+    else:
+        # в таком случае не реагируем
+        return
+    
     # поменять флаг в бд
 
+# команда stop voice message mode (оставнавливает "мод" постоянной генерации аудиосообщений на любой текст)
 @router.message(Command('stop_vmm'))
 async def cmd_stop_vmm(message: Message):
-    # проверка на личный чат
+    
+    chat_type = message.chat.type
+
+    if chat_type == 'private':
+        # это личный чат
+        await message.reply("Это личный чат.")
+    else:
+        # в таком случае не реагируем
+        return
+    
     await message.answer('')
     # поменять флаг в бд
 
-@router.message(Command('changevoice'))
+# команда change voice (изменяет текущее или устанавливает новое аудиосообщение пользователя для дальнейшей генерации)
+@router.message(Command('change_voice'))
 async def cmd_changevoice(message: Message):
-    # проверка на личный чат
-    await message.answer('')
+
+    chat_type = message.chat.type
+
+    if chat_type == 'private':
+        # это личный чат
+        await message.reply("Это личный чат.")
+    else:
+        # в таком случае не реагируем
+        return
+    
     # запросить у пользователя файл + проверка на корректность типа файла
     # возможно добавить возможность с дефолтным голосом?
     # занесение голосового сообщения в базу данных
 
 @router.message(Command('del'))
 async def cmd_del(message: Message):
-    # проверка на личный чат
-    await message.answer('')
+    chat_type = message.chat.type
+
+    if chat_type == 'private':
+        # это личный чат
+        await message.reply("Это личный чат.")
+    else:
+        # в таком случае не реагируем
+        return
+    
     # удаляет пользователя из базы данных (то есть все, что было в регистарции??)
 
 @router.message(Command('registration'))
-async def cmd_registration(message: Message):
-    # проверка на личный чат
-    await message.answer('')
+async def cmd_registration(message: Message,  db: Database):
+    chat_type = message.chat.type
+
+    if chat_type == 'private':
+        
+        user_id = str(message.from_user.id)
+        nickname = message.from_user.username or "Unknown"
+
+        # Получаем доступ к базе данных
+        # db = message.bot['db']
+
+        # Заносим пользователя в базу данных
+        await db.add_user(telegram_user_id=user_id, nickname=nickname)
+
+        # Получаем всех пользователей для проверки
+        users = await db.get_all_users()
+
+        # Форматируем ответ
+        users_list = "\n".join([f"{u['telegram_user_id']} - {u['nickname']}" for u in users])
+        await message.reply(f"Вы зарегистрированы!\n\nСписок пользователей:\n{users_list}")
+
+    else:
+        # в таком случае не реагируем
+        return
+    
     # регистрирует пользователя в базу данных
