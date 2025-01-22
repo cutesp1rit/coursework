@@ -42,32 +42,38 @@ class Database:
     def __init__(self):
         self.pool = None
 
+    # установление соединения с базой данных
     async def connect(self):
         self.pool = await asyncpg.create_pool(
             user=os.environ["DB_USER"],
             password=os.environ["DB_PASSWORD"],
             database=os.environ["DB_NAME"],
             host="db",
-            port="5432"
+            port=os.environ["DB_PORT"]
         )
 
+    # для выполнения SQL-запросов, которые не возвращают данные
     async def execute(self, sql, *args):
         async with self.pool.acquire() as conn:
             await conn.execute(sql, *args)
 
+    # используется для выполнения SQL-запросов, которые возвращают одну строку результата
     async def fetchrow(self, sql, *args):
         async with self.pool.acquire() as conn:
             return await conn.fetchrow(sql, *args)
 
+    # используется для выполнения SQL-запросов, которые возвращают несколько строк
     async def fetch(self, sql, *args):
         async with self.pool.acquire() as conn:
             return await conn.fetch(sql, *args)
-        
+    
+    # инициализация таблиц
     async def init_tables(self):
         async with self.pool.acquire() as conn:
             for query in INIT_DB_QUERIES:
                 await conn.execute(query)
 
+    # добавление пользователя
     async def add_user(self, telegram_user_id: str, nickname: str):
         """Добавляет пользователя в базу данных."""
         sql = """
@@ -77,7 +83,14 @@ class Database:
         """
         await self.execute(sql, telegram_user_id, nickname)
 
+    # удаление пользователя
+    async def delete_user(self, telegram_user_id: str):
+        sql = """
+        DELETE FROM users WHERE telegram_user_id = $1;
+        """
+        await self.execute(sql, telegram_user_id)
+
+    # возвращает всех пользователей
     async def get_all_users(self):
-        """Получает всех пользователей из базы данных."""
         sql = "SELECT * FROM users;"
         return await self.fetch(sql)
