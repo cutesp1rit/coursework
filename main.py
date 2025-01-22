@@ -14,8 +14,8 @@ import app.handlers.basic_commands
 def register_all_handlers(dp):
     for router in [
         commands_router,
-        voice_router,
-        user_management_router
+        user_management_router,
+        voice_router
     ]:
         dp.include_router(router)
 
@@ -31,6 +31,7 @@ async def main():
 
     # Подключение к базе данных
     await db.connect()
+    # await db.drop_all_tables()
     await db.init_tables()
 
     register_all_handlers(dp)
@@ -39,7 +40,5 @@ async def main():
 if __name__ == '__main__':
     try:
         asyncio.run(main())
-    except KeyboardInterrupt:
-        print("Бот выключен")
     except Exception as e:
         print(f"Произошла непредвиденная ошибка.. {e}")

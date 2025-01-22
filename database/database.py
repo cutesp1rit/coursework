@@ -7,7 +7,8 @@ INIT_DB_QUERIES = [
         "telegram_user_id" varchar UNIQUE PRIMARY KEY NOT NULL,
         "nickname" varchar,
         "gender" boolean,
-        "voice" boolean
+        "voice" boolean, 
+        "vmm" boolean 
     );
     """,
     """
@@ -20,22 +21,22 @@ INIT_DB_QUERIES = [
         "created_at" timestamp
     );
     """,
-    """
-    DO $$
-    BEGIN
-        IF NOT EXISTS (
-            SELECT 1
-            FROM information_schema.table_constraints
-            WHERE table_name = 'chat_messages'
-            AND constraint_name = 'fk_user_id'
-        ) THEN
-            ALTER TABLE chat_messages
-            ADD CONSTRAINT fk_user_id FOREIGN KEY (user_id)
-            REFERENCES users (telegram_user_id)
-            ON DELETE CASCADE;
-        END IF;
-    END $$;
-    """
+    # """
+    # DO $$
+    # BEGIN
+    #     IF NOT EXISTS (
+    #         SELECT 1
+    #         FROM information_schema.table_constraints
+    #         WHERE table_name = 'chat_messages'
+    #         AND constraint_name = 'fk_user_id'
+    #     ) THEN
+    #         ALTER TABLE chat_messages
+    #         ADD CONSTRAINT fk_user_id FOREIGN KEY (user_id)
+    #         REFERENCES users (telegram_user_id)
+    #         ON DELETE CASCADE;
+    #     END IF;
+    # END $$;
+    # """
 ]
 
 class Database:
@@ -73,6 +74,21 @@ class Database:
             for query in INIT_DB_QUERIES:
                 await conn.execute(query)
 
+    # удаление таблиц
+    async def drop_all_tables(self):
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                # отключаем ограничения внешних ключей
+                # await conn.execute("SET session_replication_role = 'replica';")
+                
+                tables = ["users", "chat_messages"]
+
+                for table_name in tables:
+                    await conn.execute(f'DROP TABLE IF EXISTS {table_name} CASCADE;')
+
+                # включаем ограничения внешних ключей обратно
+                # await conn.execute("SET session_replication_role = 'origin';")
+
     # добавление пользователя
     async def add_user(self, telegram_user_id: str, nickname: str):
         """Добавляет пользователя в базу данных."""
@@ -94,3 +110,21 @@ class Database:
     async def get_all_users(self):
         sql = "SELECT * FROM users;"
         return await self.fetch(sql)
+
+    # меняет значение vmm на true
+    async def set_vmm_true(self, telegram_user_id: str):
+        sql = """
+        UPDATE users
+        SET vmm = TRUE
+        WHERE telegram_user_id = $1;
+        """
+        await self.execute(sql, telegram_user_id)
+
+    # меняет значение vmm на False
+    async def set_vmm_false(self, telegram_user_id: str):
+        sql = """
+        UPDATE users
+        SET vmm = FALSE
+        WHERE telegram_user_id = $1;
+        """
+        await self.execute(sql, telegram_user_id)
