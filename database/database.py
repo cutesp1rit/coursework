@@ -128,3 +128,13 @@ class Database:
         WHERE telegram_user_id = $1;
         """
         await self.execute(sql, telegram_user_id)
+
+    # проверяет наличие пользователя в БД 
+    async def is_user_exist(self, telegram_user_id: str) -> bool:
+        sql = """
+        SELECT 1
+        FROM users
+        WHERE telegram_user_id = $1;
+        """
+        row = await self.fetchrow(sql, telegram_user_id)
+        return row is not None

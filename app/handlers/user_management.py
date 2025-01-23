@@ -15,7 +15,13 @@ async def cmd_vmm(message: Message, db: Database):
     chat_type = message.chat.type
 
     if chat_type == 'private':
+        # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЬ ЕСТЬ В БД!!!
         user_id = str(message.from_user.id)
+
+        if not await db.is_user_exist(user_id):
+            await message.reply(f"Для того чтобы воспользоваться этой функцией, пожалуйста, зарегистрируйтесь командой /registration.")
+            return
+
         await db.set_vmm_true(telegram_user_id=user_id)
         await message.reply(f"Теперь на каждое обычное сообщение мы будем генерировать голосовое сообщение.")
     else:
@@ -30,6 +36,12 @@ async def cmd_stop_vmm(message: Message, db: Database):
 
     if chat_type == 'private':
         user_id = str(message.from_user.id)
+
+        # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЬ ЕСТЬ В БД!!!
+        if not await db.is_user_exist(user_id):
+            await message.reply(f"Для того чтобы воспользоваться этой функцией, пожалуйста, зарегистрируйтесь командой /registration.")
+            return
+
         await db.set_vmm_false(telegram_user_id=user_id)
         await message.reply(f"Постоянная генерация остановлена.")
     else:
@@ -43,6 +55,13 @@ async def cmd_changevoice(message: Message, db: Database):
     chat_type = message.chat.type
 
     if chat_type == 'private':
+        user_id = str(message.from_user.id)
+
+        # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЬ ЕСТЬ В БД!!!
+        if not await db.is_user_exist(user_id):
+            await message.reply(f"Для того чтобы воспользоваться этой функцией, пожалуйста, зарегистрируйтесь командой /registration.")
+            return
+
         # это личный чат
         await message.reply("Это личный чат.")
     else:
@@ -60,6 +79,12 @@ async def cmd_del(message: Message, db: Database):
     # проверка чата на приватность
     if chat_type == 'private':
         user_id = str(message.from_user.id)
+
+        # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЬ ЕСТЬ В БД!!!
+        if not await db.is_user_exist(user_id):
+            await message.reply(f"Ваших данных нет в базе.")
+            return
+
         await db.delete_user(telegram_user_id=user_id)
         await message.reply(f"Ваши данные успешно удалены из базы!")
     else:
@@ -74,8 +99,13 @@ async def cmd_registration(message: Message, db: Database):
     chat_type = message.chat.type
 
     if chat_type == 'private':
-        
         user_id = str(message.from_user.id)
+
+        # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЯ НЕТ В БД!!!
+        if not await db.is_user_exist(user_id):
+            await message.reply(f"Вы уже зарегистрированы.")
+            return
+        
         nickname = message.from_user.username or "Unknown"
 
         # Заносим пользователя в базу данных
@@ -108,5 +138,3 @@ async def cmd_get_users(message: Message, db: Database):
     else:
         # в таком случае не реагируем
         return
-    
-    # регистрирует пользователя в базу данных
