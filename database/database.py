@@ -138,3 +138,16 @@ class Database:
         """
         row = await self.fetchrow(sql, telegram_user_id)
         return row is not None
+
+    async def add_user(self, telegram_user_id: str, gender: bool, nickname: str, voice: bool):
+        sql = """
+        INSERT INTO users (telegram_user_id, gender, nickname, voice, vmm)
+        VALUES ($1, $2, $3, $4, FALSE)
+        ON CONFLICT (telegram_user_id)
+        DO UPDATE SET 
+            gender = EXCLUDED.gender,
+            nickname = EXCLUDED.nickname,
+            voice = EXCLUDED.voice,
+            vmm = EXCLUDED.vmm;
+        """
+        await self.execute(sql, telegram_user_id, gender, nickname, voice)

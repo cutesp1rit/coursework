@@ -8,6 +8,7 @@ from database.database import Database
 from app.handlers import commands_router
 from app.handlers.voice_creator import voice_router
 from app.handlers.user_management import user_management_router
+from app.handlers.registration_user import registration_router
 import app.handlers.basic_commands
 
 
@@ -15,6 +16,7 @@ def register_all_handlers(dp):
     for router in [
         commands_router,
         user_management_router,
+        registration_router,
         voice_router
     ]:
         dp.include_router(router)
@@ -31,7 +33,7 @@ async def main():
 
     # Подключение к базе данных
     await db.connect()
-    await db.drop_all_tables()
+    # await db.drop_all_tables()
     await db.init_tables()
 
     register_all_handlers(dp)

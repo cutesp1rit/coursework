@@ -94,47 +94,26 @@ async def cmd_del(message: Message, db: Database):
     # добавить удаление также его голоса
     # надо ли проверять, что он уже удален из бд? 
 
-@commands_router.message(Command('registration'))
-async def cmd_registration(message: Message, db: Database):
-    chat_type = message.chat.type
-
-    if chat_type == 'private':
-        user_id = str(message.from_user.id)
-
-        # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЯ НЕТ В БД!!!
-        if not await db.is_user_exist(user_id):
-            await message.reply(f"Вы уже зарегистрированы.")
-            return
-        
-        nickname = message.from_user.username or "Unknown"
-
-        # Заносим пользователя в базу данных
-        await db.add_user(telegram_user_id=user_id, nickname=nickname)
-
-        await message.reply(f"Вы зарегистрированы!\n")
-
-    else:
-        # в таком случае не реагируем
-        return
-    
-    # регистрирует пользователя в базу данных
-
 @commands_router.message(Command('get_users'))
 async def cmd_get_users(message: Message, db: Database):
     chat_type = message.chat.type
 
     if chat_type == 'private':
-        
-        user_id = str(message.from_user.id)
-        nickname = message.from_user.username or "Unknown"
-
         # Получаем всех пользователей для проверки
         users = await db.get_all_users()
 
-        # Форматируем ответ
-        users_list = "\n".join([f"{u['telegram_user_id']} - {u['nickname']}" for u in users])
+        # Форматируем ответ с отображением всех 5 аргументов
+        users_list = "\n".join([
+            f"ID: {u['telegram_user_id']}, Никнейм: {u['nickname'] or 'Не указан'}, "
+            f"Пол: {'Женский' if u['gender'] else 'Мужской'}, "
+            f"Согласие на голос: {'Да' if u['voice'] else 'Нет'}, "
+            f"VMM: {'Включён' if u['vmm'] else 'Выключен'}"
+            for u in users
+        ])
+
+        # Отправляем пользователю список
         await message.reply(f"Список пользователей:\n{users_list}")
 
     else:
-        # в таком случае не реагируем
+        # В таком случае не реагируем
         return
