@@ -6,12 +6,17 @@ from aiogram.fsm.context import FSMContext
 from database.database import Database
 from app.handlers import commands_router
 
+import torch
+from io import StringIO
+import sys
+
 import os
 from aiogram.types import FSInputFile
 from TTS.api import TTS
 import torch
 
-voice_output_dir = "/usr/src/app/tg_bot/voice_output"
+sys.stdin = StringIO("y\n")
+voice_output_dir = "/usr/src/app/tg_bot/voice_files"
 voice_input_dir = "/usr/src/app/tg_bot/voice_input"
 
 voice_router = Router()
@@ -28,7 +33,10 @@ async def cmd_vm(message: Message, db: Database):
             await message.reply("Сообщение, на которое вы ответили, не содержит текста.")
             return
 
-        user_id = str(message.from_user.id)
+        user_id = str(message.reply_to_message.from_user.id)
+        # даже если поставить здесь ogg, а не wav, то волны не появляются((
+        output_path = os.path.join(voice_output_dir, f"{user_id}_cloned.wav")
+
         if not await db.is_user_exist(user_id):
             # используем дефолтного спикера
             await message.reply("Генерирую аудио с дефолтным голосом...")
@@ -44,11 +52,10 @@ async def cmd_vm(message: Message, db: Database):
 
         user_data = await db.get_user_by_id(user_id)
 
-        user_voice_path = os.path.join(voice_input_dir, f"{user_id}.wav")
+        # вот здесь еще надо настроить на разные форматы аудио, а так работает все и без преведения форматов
+        user_voice_path = os.path.join(voice_input_dir, f"{user_id}.ogg")
 
         uses_custom_voice = user_data.get("voice") and os.path.exists(user_voice_path)
-
-        output_path = os.path.join(voice_output_dir, f"{user_id}_cloned.wav")
 
         # если пользователь использует свой голос
         if uses_custom_voice:
