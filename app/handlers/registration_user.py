@@ -1,5 +1,6 @@
-from aiogram import F, Router
-from aiogram.types import Message, CallbackQuery
+import os
+from aiogram import F, Router, Bot
+from aiogram.types import Message, File
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from database.database import Database
@@ -8,6 +9,7 @@ from app.states.registration import RegistrationUser
 from app.keyboards.reg_kb import ChooseGender, Nickname, ChooseVoice
 
 registration_router = Router()
+voice_input_dir = "/usr/src/app/tg_bot/voice_input"
 
 @commands_router.message(Command('registration'))
 async def cmd_registration(message: Message, db: Database, state: FSMContext):
@@ -64,17 +66,37 @@ async def choose_voice(message: Message, state: FSMContext, db: Database):
         await message.reply("Отлично, тогда пришлите аудиофайл с вашим голосом.")
     
 @registration_router.message(RegistrationUser.get_voice, F.document | F.audio | F.voice)
-async def get_voice(message: Message, state: FSMContext, db: Database):
+async def get_voice(message: Message, state: FSMContext, db: Database, bot: Bot):
     # отправляем данные в бд
     data = await state.get_data()
     user_id = str(message.from_user.id)
     
     gender = data.get("gender")
     nickname = data.get("nickname")
-
-    await db.add_user(user_id, gender, nickname, True)
-    await message.reply("Вы зарегистрированы и можете пользоваться полным функционалом бота!")
     
-    # сохраняем аудио в папку
+    file_id = None
+    if message.voice:
+        file_id = message.voice.file_id
+        extension = "ogg"
+    elif message.audio:
+        file_id = message.audio.file_id
+        extension = message.audio.file_name.split(".")[-1] if message.audio.file_name else "mp3"
+    # elif message.document:
+    #     file_id = message.document.file_id
+    #     extension = message.document.file_name.split(".")[-1] if message.document.file_name else "file"
 
-    await state.clear()
+    if file_id:
+        telegram_file: File = await bot.get_file(file_id)
+
+        file_path = os.path.join(voice_input_dir, f"{user_id}.{extension}")
+
+        os.makedirs(voice_input_dir, exist_ok=True)
+
+        await bot.download_file(telegram_file.file_path, file_path)
+
+        # все прошло успешно - отправляем результат в БД
+        await db.add_user(user_id, gender, nickname, True)
+        await message.reply("Вы зарегистрированы и можете пользоваться полным функционалом бота!")
+        await state.clear()
+    else:
+        await message.reply("Не удалось обработать файл. Убедитесь, что вы отправили корректный аудиофайл.")

@@ -111,6 +111,17 @@ class Database:
         sql = "SELECT * FROM users;"
         return await self.fetch(sql)
 
+    # возвращает одного пользователя по его id
+    async def get_user_by_id(self, telegram_user_id: str) -> dict:
+        sql = """
+        SELECT telegram_user_id, nickname, gender, voice, vmm
+        FROM users
+        WHERE telegram_user_id = $1;
+        """
+        row = await self.fetchrow(sql, telegram_user_id)
+        return dict(row) if row else None
+
+
     # меняет значение vmm на true
     async def set_vmm_true(self, telegram_user_id: str):
         sql = """

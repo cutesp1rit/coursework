@@ -3,6 +3,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
+import os, glob
 from database.database import Database
 from app.handlers import commands_router
 
@@ -85,14 +86,24 @@ async def cmd_del(message: Message, db: Database):
             await message.reply(f"Ваших данных нет в базе.")
             return
 
+        user_data = await db.get_user_by_id(user_id)
+
+        # проверяем, использует ли пользователь свой голос
+        if user_data.get("voice"):
+            voice_input_dir = "/usr/src/app/tg_bot/voice_input"
+            file_pattern = os.path.join(voice_input_dir, f"{user_id}.*")
+
+            matching_files = glob.glob(file_pattern)
+
+            if matching_files:
+                for file_path in matching_files:
+                    os.remove(file_path)
+
         await db.delete_user(telegram_user_id=user_id)
         await message.reply(f"Ваши данные успешно удалены из базы!")
     else:
         # в таком случае не реагируем
         return
-    
-    # добавить удаление также его голоса
-    # надо ли проверять, что он уже удален из бд? 
 
 @commands_router.message(Command('get_users'))
 async def cmd_get_users(message: Message, db: Database):
