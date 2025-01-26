@@ -1,5 +1,5 @@
 import asyncpg
-import os
+import os, datetime
 
 INIT_DB_QUERIES = [
     """
@@ -162,3 +162,29 @@ class Database:
             vmm = EXCLUDED.vmm;
         """
         await self.execute(sql, telegram_user_id, gender, nickname, voice)
+    
+    async def add_chat_message(self, message_id: str, chat_id: str, user_id: str, username: str, message_text: str, created_at: datetime):
+        sql = """
+        INSERT INTO chat_messages (id, chat_id, user_id, username, message_text, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6);
+        """
+        await self.execute(sql, message_id, chat_id, user_id, username, message_text, created_at)
+
+    async def get_message_count(self, chat_id: str) -> int:
+        sql = "SELECT COUNT(*) FROM chat_messages WHERE chat_id = $1;"
+        row = await self.fetchrow(sql, chat_id)
+        return row["count"] if row else 0
+
+    async def get_oldest_message_id(self, chat_id: str) -> str:
+        sql = """
+        SELECT id FROM chat_messages
+        WHERE chat_id = $1
+        ORDER BY created_at ASC
+        LIMIT 1;
+        """
+        row = await self.fetchrow(sql, chat_id)
+        return row["id"] if row else None
+
+    async def delete_message(self, message_id: str):
+        sql = "DELETE FROM chat_messages WHERE id = $1;"
+        await self.execute(sql, message_id)

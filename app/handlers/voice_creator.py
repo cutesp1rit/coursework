@@ -10,10 +10,12 @@ import torch
 from io import StringIO
 import sys
 
+import glob
 import os
 from aiogram.types import FSInputFile
 from TTS.api import TTS
 import torch
+import datetime
 
 sys.stdin = StringIO("y\n")
 voice_output_dir = "/usr/src/app/tg_bot/voice_files"
@@ -52,13 +54,12 @@ async def cmd_vm(message: Message, db: Database):
 
         user_data = await db.get_user_by_id(user_id)
 
-        # вот здесь еще надо настроить на разные форматы аудио, а так работает все и без преведения форматов
-        user_voice_path = os.path.join(voice_input_dir, f"{user_id}.ogg")
-
-        uses_custom_voice = user_data.get("voice") and os.path.exists(user_voice_path)
+        file_pattern = os.path.join(voice_input_dir, f"{user_id}.*")
+        matching_files = glob.glob(file_pattern)
+        user_voice_path = matching_files[0] if matching_files else None
 
         # если пользователь использует свой голос
-        if uses_custom_voice:
+        if user_data.get("voice") and user_voice_path:
             await message.reply("Генерирую аудио с вашим индивидуальным голосом...")
             tts.tts_to_file(
                 text=text_to_say,
@@ -96,4 +97,78 @@ async def cmd_vd(message: Message, db: Database):
         await message.reply("Это групповой чат.")
     else:
         # в таком случае не реагируем
+        return
+
+# метод для генерация голосового сообщения на основе текста
+async def generate_voice_message(text: str, user_id: str, uses_custom_voice: bool, db: Database, message: Message):
+    file_pattern = os.path.join(voice_input_dir, f"{user_id}.*")
+    matching_files = glob.glob(file_pattern)
+    user_voice_path = matching_files[0] if matching_files else None
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
+
+    output_path = os.path.join(voice_output_dir, f"{user_id}_cloned.wav")
+
+    if uses_custom_voice and user_voice_path:
+        await message.reply("Генерирую аудио с вашим индивидуальным голосом...")
+        tts.tts_to_file(
+            text=text,
+            speaker_wav=user_voice_path,
+            file_path=output_path,
+            language="ru"
+        )
+    else:
+        await message.reply("Генерирую аудио с дефолтным голосом...")
+        tts.tts_to_file(
+            text=text,
+            speaker="Ana Florence",
+            file_path=output_path,
+            language="ru"
+        )
+
+    voice_file = FSInputFile(output_path)
+    await message.answer_voice(voice_file)
+
+# обработка текстового сообщения в групповых чатах
+async def handle_group_message(message: Message, db: Database):
+    chat_id = str(message.chat.id)
+    user_id = str(message.from_user.id)
+    username = message.from_user.username
+    message_text = message.text
+    created_at = datetime.now()
+
+    await db.add_chat_message(
+        message_id=message.message_id,
+        chat_id=chat_id,
+        user_id=user_id,
+        username=username,
+        message_text=message_text,
+        created_at=created_at,
+    )
+
+    message_count = await db.get_message_count(chat_id)
+
+    # если сообщений больше 1000, удаляем самое старое
+    if message_count > 1000:
+        oldest_message_id = await db.get_oldest_message_id(chat_id)
+        if oldest_message_id:
+            await db.delete_message(oldest_message_id)
+
+
+# если пришло обычное текстовое сообщение
+@voice_router.message(F.text)
+async def just_message(message: Message, state: FSMContext, db: Database):
+    chat_type = message.chat.type
+
+    if chat_type == 'private':
+        user_id = str(message.from_user.id)
+
+        user_data = await db.get_user_by_id(user_id)
+        if user_data and user_data.get("vmm"):
+            await generate_voice_message(message.text, user_id, user_data.get("voice"), db, message)
+    elif chat_type in ['group', 'supergroup']:
+        await handle_group_message(message, db)
+    else:
         return
