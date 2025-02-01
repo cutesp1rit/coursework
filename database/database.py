@@ -188,3 +188,17 @@ class Database:
     async def delete_message(self, message_id: str):
         sql = "DELETE FROM chat_messages WHERE id = $1;"
         await self.execute(sql, message_id)
+    
+    # достает count сообщений из чата позже определенного
+    async def dialogue_messages(self, message_id: str, chat_id: str, count: int) -> list:
+        sql = """
+        SELECT id, chat_id, user_id, username, message_text, created_at
+        FROM chat_messages
+        WHERE chat_id = $1 AND created_at >= (
+            SELECT created_at FROM chat_messages WHERE id = $2
+        )
+        ORDER BY created_at ASC
+        LIMIT $3;
+        """
+        return await self.fetch(sql, str(chat_id), str(message_id), count)
+
