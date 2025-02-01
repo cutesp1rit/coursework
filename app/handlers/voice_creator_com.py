@@ -18,6 +18,7 @@ import torch
 from app.voice_creator import generate_voice_message, convert_wav_to_ogg, format_dialogue, generate_audio_for_dialogue, combine_audio_files, handle_group_message
 
 voice_output_dir = "/usr/src/app/tg_bot/voice_output"
+os.makedirs(voice_output_dir, exist_ok=True)
 voice_input_dir = "/usr/src/app/tg_bot/voice_input"
 
 voice_router = Router()
@@ -106,17 +107,20 @@ async def just_message(message: Message, state: FSMContext, db: Database):
     if chat_type == 'private':
         user_id = str(message.from_user.id)
         
-        await message.reply("Генерирую аудио для вас...")
+        user_data = await db.get_user_by_id(user_id)
+        
+        if user_data and user_data.get("vmm"):
+            await message.reply("Генерирую аудио для вас...")
 
-        output_path_wav = os.path.join(voice_output_dir, f"{user_id}_cloned.wav")
+            output_path_wav = os.path.join(voice_output_dir, f"{user_id}_cloned.wav")
 
-        await generate_voice_message(message.text, user_id, db, output_path_wav)
+            await generate_voice_message(message.text, user_id, db, output_path_wav)
 
-        voice_file = FSInputFile(output_path_wav)
-        await message.answer_voice(voice_file)
+            voice_file = FSInputFile(output_path_wav)
+            await message.answer_voice(voice_file)
 
-        if os.path.exists(output_path_wav):
-            os.remove(output_path_wav)
+            if os.path.exists(output_path_wav):
+                os.remove(output_path_wav)
 
     elif chat_type in ['group', 'supergroup']:
         await handle_group_message(message, db)
