@@ -67,21 +67,24 @@ async def format_dialogue(messages: list, db: Database) -> list:
             nickname = username
             said = "сказал"
 
+        intro_text = f"{nickname} {said}"
+
         # если сообщение от "нового" пользователя, добавляем текущий текст в диалог
         if user_id != current_user:
             if current_user is not None:
-                formatted_dialogue.append((current_user_id, current_text))  # Сохраняем user_id
+                formatted_dialogue.append((current_user_id, current_text))
 
             current_user = user_id
-            current_user_id = user_id  # Запоминаем user_id
-            current_text = f"{nickname} {said}: {text}"
+            current_user_id = user_id
+            current_text = f"{text}"
+            formatted_dialogue.append(("", intro_text))
         else:
-            # если сообщение от того же пользователя, то можем объединять
+            # если сообщение от того же пользователя, объединяем текст
             current_text += f"\n{text}"
 
     # добавляем последнее сообщение
     if current_text:
-        formatted_dialogue.append((current_user_id, current_text))  # Сохраняем user_id
+        formatted_dialogue.append((current_user_id, current_text))
 
     return formatted_dialogue
 
