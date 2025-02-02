@@ -1,20 +1,13 @@
+import os, sys, glob, torch, datetime
+from io import StringIO
+from datetime import datetime
+
+from pydub import AudioSegment
+from TTS.api import TTS
 from aiogram.types import Message
 
 from database.database import Database
 
-import torch
-
-import glob
-import os
-from io import StringIO
-from aiogram.types import FSInputFile
-from TTS.api import TTS
-import torch
-import datetime
-import sys
-
-from datetime import datetime
-from pydub import AudioSegment
 
 voice_input_dir = "/usr/src/app/tg_bot/voice_input"
 

@@ -1,5 +1,4 @@
-import asyncio
-import os
+import asyncio, os
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from database.database import Database

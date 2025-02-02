@@ -1,21 +1,20 @@
+import os
+
 from aiogram import F, Router
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
 from database.database import Database
 from app.handlers import commands_router
-
-import torch
-from io import StringIO
-import sys
-
-import glob
-import os
-from aiogram.types import FSInputFile
-from TTS.api import TTS
-import torch
-from app.voice_creator import generate_voice_message, convert_wav_to_ogg, format_dialogue, generate_audio_for_dialogue, combine_audio_files, handle_group_message
+from app.voice_creator import (
+    generate_voice_message,
+    convert_wav_to_ogg,
+    format_dialogue,
+    generate_audio_for_dialogue,
+    combine_audio_files,
+    handle_group_message
+)
 
 voice_output_dir = "/usr/src/app/tg_bot/voice_output"
 os.makedirs(voice_output_dir, exist_ok=True)

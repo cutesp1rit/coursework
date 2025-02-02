@@ -1,8 +1,6 @@
-from aiogram import F, Router
-from aiogram.types import Message, CallbackQuery
-from aiogram.filters import CommandStart, Command
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.context import FSMContext
+from aiogram import Router
+from aiogram.types import Message
+from aiogram.filters import Command
 import os, glob
 from database.database import Database
 from app.handlers import commands_router
