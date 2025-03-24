@@ -71,8 +71,8 @@ async def cmd_changevoice(message: Message, db: Database):
     # возможно добавить возможность с дефолтным голосом?
     # занесение голосового сообщения в базу данных
 
-@commands_router.message(Command('del'))
-async def cmd_del(message: Message, db: Database):
+@commands_router.message(Command('delete_data'))
+async def cmd_delete_data(message: Message, db: Database):
     chat_type = message.chat.type
 
     # проверка чата на приватность

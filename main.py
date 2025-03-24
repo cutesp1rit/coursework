@@ -1,4 +1,5 @@
-import asyncio, os
+import asyncio
+import os
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from database.database import Database
@@ -19,7 +20,7 @@ def register_all_handlers(dp):
         voice_router
     ]:
         dp.include_router(router)
-
+        
 async def main():
     bot = Bot(token=os.environ["bot_token"])
 
