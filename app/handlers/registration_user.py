@@ -37,8 +37,8 @@ async def cmd_registration(message: Message, db: Database, state: FSMContext):
     if chat_type == 'private':
         user_id = str(message.from_user.id)
 
-        # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЯ НЕТ В БД!!!
-        if await db.is_user_exist(user_id):
+        # Проверяем, существует ли пользователь в БД
+        if await db.users.exists(user_id):
             await message.reply(f"Вы уже зарегистрированы.")
             return
 
@@ -90,7 +90,7 @@ async def choose_voice(message: Message, state: FSMContext, db: Database):
         nickname = data.get("nickname")
         language = data.get("language")
 
-        await db.add_user(user_id, gender, nickname, False, language)
+        await db.users.add(user_id, gender, nickname, False, language)
         await state.clear()
         await message.reply("Вы зарегистрированы и можете пользоваться полным функционалом бота!")
     elif message.text == "Генерировать на основе моего голоса":
@@ -125,7 +125,7 @@ async def get_voice(message: Message, state: FSMContext, db: Database, bot: Bot)
         await bot.download_file(telegram_file.file_path, file_path)
 
         # все прошло успешно - отправляем результат в БД
-        await db.add_user(user_id, gender, nickname, True, language)
+        await db.users.add(user_id, gender, nickname, True, language)
         await message.reply("Вы зарегистрированы и можете пользоваться полным функционалом бота!")
         await state.clear()
     else:

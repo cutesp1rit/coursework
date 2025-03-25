@@ -17,11 +17,11 @@ async def cmd_vmm(message: Message, db: Database):
         # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЬ ЕСТЬ В БД!!!
         user_id = str(message.from_user.id)
 
-        if not await db.is_user_exist(user_id):
+        if not await db.users.exists(user_id):
             await message.reply(f"Для того чтобы воспользоваться этой функцией, пожалуйста, зарегистрируйтесь командой /registration.")
             return
 
-        await db.set_vmm_true(telegram_user_id=user_id)
+        await db.users.update_vmm(user_id, True)
         await message.reply(f"Теперь на каждое обычное сообщение мы будем генерировать голосовое сообщение.")
     else:
         # в таком случае не реагируем
@@ -37,11 +37,11 @@ async def cmd_stop_vmm(message: Message, db: Database):
         user_id = str(message.from_user.id)
 
         # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЬ ЕСТЬ В БД!!!
-        if not await db.is_user_exist(user_id):
+        if not await db.users.exists(user_id):
             await message.reply(f"Для того чтобы воспользоваться этой функцией, пожалуйста, зарегистрируйтесь командой /registration.")
             return
 
-        await db.set_vmm_false(telegram_user_id=user_id)
+        await db.users.update_vmm(user_id, False)
         await message.reply(f"Постоянная генерация остановлена.")
     else:
         # в таком случае не реагируем
@@ -56,11 +56,11 @@ async def cmd_delete_data(message: Message, db: Database):
         user_id = str(message.from_user.id)
 
         # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЬ ЕСТЬ В БД!!!
-        if not await db.is_user_exist(user_id):
+        if not await db.users.exists(user_id):
             await message.reply(f"Ваших данных нет в базе.")
             return
 
-        user_data = await db.get_user_by_id(user_id)
+        user_data = await db.users.get_by_id(user_id)
 
         # проверяем, использует ли пользователь свой голос
         if user_data.get("voice"):
@@ -73,7 +73,7 @@ async def cmd_delete_data(message: Message, db: Database):
                 for file_path in matching_files:
                     os.remove(file_path)
 
-        await db.delete_user(telegram_user_id=user_id)
+        await db.users.delete(user_id)
         await message.reply(f"Ваши данные успешно удалены из базы!")
     else:
         # в таком случае не реагируем
@@ -85,7 +85,7 @@ async def cmd_get_users(message: Message, db: Database):
 
     if chat_type == 'private':
         # Получаем всех пользователей для проверки
-        users = await db.get_all_users()
+        users = await db.users.get_all()
 
         # Форматируем ответ с отображением всех 5 аргументов
         users_list = "\n".join([

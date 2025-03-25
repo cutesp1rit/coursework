@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from connection import DatabaseConnection
+from database.connection import DatabaseConnection
 
 class Repository(ABC):
     def __init__(self, db: DatabaseConnection):

@@ -10,7 +10,7 @@ async def cmd_start(message: Message, db: Database):
 
     if chat_type == 'private':
         user_id = str(message.from_user.id)
-        user_is_registered = await db.is_user_exist(user_id)
+        user_is_registered = await db.users.exists(user_id)
 
         start_message_private = """
 👋 Привет! Я голосовой бот для преобразования текста в речь.
@@ -85,7 +85,7 @@ async def cmd_profile(message: Message, db: Database):
     user_id = str(message.from_user.id)
 
     if chat_type == "private":  # Личный чат
-        user = await db.get_user_by_id(user_id)
+        user = await db.users.get_by_id(user_id)
         if not user:
             await message.answer(
                 "🚀 Вы не зарегистрированы.\n"

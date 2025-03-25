@@ -37,7 +37,7 @@ async def cmd_change_nickname(message: Message, state: FSMContext, db: Database)
         return
         
     user_id = str(message.from_user.id)
-    if not await db.is_user_exist(user_id):
+    if not await db.users.exists(user_id):
         await message.reply("Сначала необходимо зарегистрироваться с помощью команды /registration")
         return
 
@@ -50,7 +50,7 @@ async def process_nickname_change(message: Message, state: FSMContext, db: Datab
     user_id = str(message.from_user.id)
     new_nickname = message.text
     
-    await db.update_nickname(user_id, new_nickname)
+    await db.users.update_nickname(user_id, new_nickname)
     await state.clear()
     await message.reply(f"Ваш никнейм успешно изменен на: {new_nickname}")
 
@@ -61,7 +61,7 @@ async def cmd_change_gender(message: Message, state: FSMContext, db: Database):
         return
         
     user_id = str(message.from_user.id)
-    if not await db.is_user_exist(user_id):
+    if not await db.users.exists(user_id):
         await message.reply("Сначала необходимо зарегистрироваться с помощью команды /registration")
         return
 
@@ -77,7 +77,7 @@ async def process_gender_change(message: Message, state: FSMContext, db: Databas
     user_id = str(message.from_user.id)
     new_gender = False if message.text.upper() == "М" else True
     
-    await db.update_gender(user_id, new_gender)
+    await db.users.update_gender(user_id, new_gender)
     await state.clear()
     await message.reply("Гендер успешно изменен")
 
@@ -88,7 +88,7 @@ async def cmd_change_voice(message: Message, state: FSMContext, db: Database):
         return
         
     user_id = str(message.from_user.id)
-    if not await db.is_user_exist(user_id):
+    if not await db.users.exists(user_id):
         await message.reply("Сначала необходимо зарегистрироваться с помощью команды /registration")
         return
 
@@ -100,7 +100,7 @@ async def process_voice_choice(message: Message, state: FSMContext, db: Database
     user_id = str(message.from_user.id)
     
     if message.text == "Генерировать на основе синтезированного голоса":
-        await db.update_voice(user_id, False)
+        await db.users.update_voice(user_id, False)
         await state.clear()
         await message.reply("Установлен синтезированный голос")
     elif message.text == "Генерировать на основе моего голоса":
@@ -113,10 +113,8 @@ async def process_voice_choice(message: Message, state: FSMContext, db: Database
 async def process_voice_file(message: Message, state: FSMContext, db: Database, bot: Bot):
     user_id = str(message.from_user.id)
     
-    # Check if user already has a voice file
-    user_data = await db.get_user_by_id(user_id)
-    if user_data.get("voice"):
-        # Delete existing voice file if it exists
+    user_data = await db.users.get_by_id(user_id)
+    if user_data and user_data.get("voice"):
         file_pattern = os.path.join(voice_input_dir, f"{user_id}.*")
         matching_files = glob.glob(file_pattern)
         if matching_files:
@@ -132,7 +130,7 @@ async def process_voice_file(message: Message, state: FSMContext, db: Database, 
     os.makedirs(voice_input_dir, exist_ok=True)
     await bot.download_file(telegram_file.file_path, file_path)
     
-    await db.update_voice(user_id, True)
+    await db.users.update_voice(user_id, True)
     await state.clear()
     await message.reply("Голос успешно обновлен")
 
@@ -143,7 +141,7 @@ async def cmd_change_language(message: Message, state: FSMContext, db: Database)
         return
         
     user_id = str(message.from_user.id)
-    if not await db.is_user_exist(user_id):
+    if not await db.users.exists(user_id):
         await message.reply("Сначала необходимо зарегистрироваться с помощью команды /registration")
         return
 
@@ -159,6 +157,6 @@ async def process_language_change(message: Message, state: FSMContext, db: Datab
         return
         
     user_id = str(message.from_user.id)
-    await db.update_language(user_id, language_code)
+    await db.users.update_language(user_id, language_code)
     await state.clear()
     await message.reply(f"Язык успешно изменен на {SUPPORTED_LANGUAGES[language_code]}")

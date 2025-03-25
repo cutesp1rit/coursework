@@ -19,7 +19,7 @@ final_output_dir = "/usr/src/app/tg_bot/voice_files"
 os.makedirs(final_output_dir, exist_ok=True)
 
 async def generate_voice_message(text: str, user_id: str, db: Database, voice_dir: str):
-    user_data = await db.get_user_by_id(user_id)
+    user_data = await db.users.get_by_id(user_id)
     uses_custom_voice = user_data and user_data.get("voice", False)
     language = user_data.get("language", "ru") if user_data else "ru"
     gender = user_data.get("gender", False) if user_data else False
@@ -56,7 +56,7 @@ async def format_dialogue(messages: list, db: Database) -> list:
         username = msg['username']
         text = msg['message_text']
 
-        user_data = await db.get_user_by_id(user_id)
+        user_data = await db.users.get_by_id(user_id)
         if user_data:
             nickname = user_data['nickname'] or username
             gender = user_data['gender']
@@ -160,7 +160,7 @@ async def handle_group_message(message: Message, db: Database):
     message_text = message.text
     created_at = datetime.now()
 
-    await db.add_chat_message(
+    await db.messages.add(
         message_id=str(message.message_id),
         chat_id=chat_id,
         user_id=user_id,
@@ -169,10 +169,10 @@ async def handle_group_message(message: Message, db: Database):
         created_at=created_at,
     )
 
-    message_count = await db.get_message_count(chat_id)
+    message_count = await db.messages.get_count(chat_id)
 
     # если сообщений больше 1000, удаляем самое старое
     if message_count > 1000:
-        oldest_message_id = await db.get_oldest_message_id(chat_id)
+        oldest_message_id = await db.messages.get_oldest_message_id(chat_id)
         if oldest_message_id:
-            await db.delete_message(oldest_message_id)
+            await db.messages.delete(oldest_message_id)

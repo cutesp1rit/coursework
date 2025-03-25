@@ -76,7 +76,7 @@ async def cmd_vd(message: Message, db: Database):
         await message.reply("Укажите корректное количество сообщений. Пример: /vd 6")
         return
 
-    messages = await db.dialogue_messages(replied_message_id, str(message.chat.id), count)
+    messages = await db.messages.get_dialogue_messages(replied_message_id, str(message.chat.id), count)
 
     if not messages:
         await message.reply("Не удалось найти сообщения для формирования диалога.")
@@ -106,7 +106,7 @@ async def just_message(message: Message, state: FSMContext, db: Database):
     if chat_type == 'private':
         user_id = str(message.from_user.id)
         
-        user_data = await db.get_user_by_id(user_id)
+        user_data = await db.users.get_by_id(user_id)
         
         if user_data and user_data.get("vmm"):
             await message.reply("Генерирую аудио для вас...")
