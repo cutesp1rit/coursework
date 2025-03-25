@@ -18,32 +18,30 @@ tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
 final_output_dir = "/usr/src/app/tg_bot/voice_files"
 os.makedirs(final_output_dir, exist_ok=True)
 
-async def generate_voice_message(text: str, user_id: str, db : Database, voice_dir : str):
+async def generate_voice_message(text: str, user_id: str, db: Database, voice_dir: str):
     user_data = await db.get_user_by_id(user_id)
     uses_custom_voice = user_data and user_data.get("voice", False)
+    language = user_data.get("language", "ru") if user_data else "ru"
+    gender = user_data.get("gender", False) if user_data else False
 
     file_pattern = os.path.join(voice_input_dir, f"{user_id}.*")
     matching_files = glob.glob(file_pattern)
     user_voice_path = matching_files[0] if matching_files else None
 
-    # device = "cuda" if torch.cuda.is_available() else "cpu"
-    # tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
-
     if uses_custom_voice and user_voice_path:
-        # await message.reply("Генерирую аудио с вашим индивидуальным голосом...")
         tts.tts_to_file(
             text=text,
             speaker_wav=user_voice_path,
             file_path=voice_dir,
-            language="ru"
+            language=language
         )
     else:
-        # await message.reply("Генерирую аудио с дефолтным голосом...")
+        speaker = "Ana Florence" if gender else "Filip Traverse"
         tts.tts_to_file(
             text=text,
-            speaker="Ana Florence",
+            speaker=speaker,
             file_path=voice_dir,
-            language="ru"
+            language=language
         )
 
 # формирует сообщения в список на генерацию аудио диалога
