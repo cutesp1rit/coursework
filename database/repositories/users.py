@@ -1,4 +1,5 @@
 from .base import Repository
+from typing import Optional, List, Dict, Any
 
 class UserRepository(Repository):
     async def init_tables(self):
