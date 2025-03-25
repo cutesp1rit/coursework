@@ -114,9 +114,6 @@ async def get_voice(message: Message, state: FSMContext, db: Database, bot: Bot)
     elif message.audio:
         file_id = message.audio.file_id
         extension = message.audio.file_name.split(".")[-1] if message.audio.file_name else "mp3"
-    # elif message.document:
-    #     file_id = message.document.file_id
-    #     extension = message.document.file_name.split(".")[-1] if message.document.file_name else "file"
 
     if file_id:
         telegram_file: File = await bot.get_file(file_id)

@@ -1,4 +1,4 @@
-import os
+import os, glob
 from aiogram import F, Router, Bot
 from aiogram.types import Message
 from aiogram.filters import Command
@@ -112,6 +112,16 @@ async def process_voice_choice(message: Message, state: FSMContext, db: Database
 @profile_router.message(ProfileStates.waiting_for_voice_file, F.audio | F.voice)
 async def process_voice_file(message: Message, state: FSMContext, db: Database, bot: Bot):
     user_id = str(message.from_user.id)
+    
+    # Check if user already has a voice file
+    user_data = await db.get_user_by_id(user_id)
+    if user_data.get("voice"):
+        # Delete existing voice file if it exists
+        file_pattern = os.path.join(voice_input_dir, f"{user_id}.*")
+        matching_files = glob.glob(file_pattern)
+        if matching_files:
+            for file_path in matching_files:
+                os.remove(file_path)
     
     file_id = message.voice.file_id if message.voice else message.audio.file_id
     extension = "ogg" if message.voice else message.audio.file_name.split(".")[-1]
