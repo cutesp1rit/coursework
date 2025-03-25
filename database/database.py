@@ -122,7 +122,6 @@ class Database:
         row = await self.fetchrow(sql, telegram_user_id)
         return dict(row) if row else None
 
-
     # меняет значение vmm на true
     async def set_vmm_true(self, telegram_user_id: str):
         sql = """
@@ -203,3 +202,39 @@ class Database:
         LIMIT $3;
         """
         return await self.fetch(sql, str(chat_id), str(message_id), count)
+
+    # Обновление никнейма пользователя
+    async def update_nickname(self, telegram_user_id: str, new_nickname: str):
+        sql = """
+        UPDATE users
+        SET nickname = $2
+        WHERE telegram_user_id = $1;
+        """
+        await self.execute(sql, telegram_user_id, new_nickname)
+
+    # Обновление пола пользователя
+    async def update_gender(self, telegram_user_id: str, new_gender: bool):
+        sql = """
+        UPDATE users
+        SET gender = $2
+        WHERE telegram_user_id = $1;
+        """
+        await self.execute(sql, telegram_user_id, new_gender)
+
+    # Обновление голоса пользователя
+    async def update_voice(self, telegram_user_id: str, new_voice: bool):
+        sql = """
+        UPDATE users
+        SET voice = $2
+        WHERE telegram_user_id = $1;
+        """
+        await self.execute(sql, telegram_user_id, new_voice)
+
+    # Обновление языка пользователя
+    async def update_language(self, telegram_user_id: str, new_language: str):
+        sql = """
+        UPDATE users
+        SET language = $2
+        WHERE telegram_user_id = $1;
+        """
+        await self.execute(sql, telegram_user_id, new_language)
