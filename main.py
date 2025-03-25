@@ -9,6 +9,7 @@ from app.handlers import commands_router
 from app.handlers.voice_creator_com import voice_router
 from app.handlers.user_management import user_management_router
 from app.handlers.registration_user import registration_router
+from app.handlers.profile import profile_router
 import app.handlers.basic_commands
 
 
@@ -17,6 +18,7 @@ def register_all_handlers(dp):
         commands_router,
         user_management_router,
         registration_router,
+        profile_router,
         voice_router
     ]:
         dp.include_router(router)

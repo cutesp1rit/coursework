@@ -47,30 +47,6 @@ async def cmd_stop_vmm(message: Message, db: Database):
         # в таком случае не реагируем
         return
 
-# команда change voice (изменяет текущее или устанавливает новое аудиосообщение пользователя для дальнейшей генерации)
-@commands_router.message(Command('change_voice'))
-async def cmd_changevoice(message: Message, db: Database):
-
-    chat_type = message.chat.type
-
-    if chat_type == 'private':
-        user_id = str(message.from_user.id)
-
-        # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЬ ЕСТЬ В БД!!!
-        if not await db.is_user_exist(user_id):
-            await message.reply(f"Для того чтобы воспользоваться этой функцией, пожалуйста, зарегистрируйтесь командой /registration.")
-            return
-
-        # это личный чат
-        await message.reply("Это личный чат.")
-    else:
-        # в таком случае не реагируем
-        return
-    
-    # запросить у пользователя файл + проверка на корректность типа файла
-    # возможно добавить возможность с дефолтным голосом?
-    # занесение голосового сообщения в базу данных
-
 @commands_router.message(Command('delete_data'))
 async def cmd_delete_data(message: Message, db: Database):
     chat_type = message.chat.type

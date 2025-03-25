@@ -51,9 +51,9 @@ async def cmd_registration(message: Message, db: Database, state: FSMContext):
 
 @registration_router.message(RegistrationUser.get_gender)
 async def get_gender(message: Message, state: FSMContext):
-    if message.text == "М" or message.text == "Ж":
+    if message.text.upper() == "М" or message.text.upper() == "Ж":
         data = await state.get_data()
-        if message.text == "М":
+        if message.text.upper() == "М":
             await state.update_data(gender=False)
         else:
             await state.update_data(gender=True)
@@ -97,7 +97,7 @@ async def choose_voice(message: Message, state: FSMContext, db: Database):
         await state.set_state(RegistrationUser.get_voice)
         await message.reply("Отлично, тогда пришлите аудиофайл с вашим голосом.")
     
-@registration_router.message(RegistrationUser.get_voice, F.document | F.audio | F.voice)
+@registration_router.message(RegistrationUser.get_voice, F.audio | F.voice)
 async def get_voice(message: Message, state: FSMContext, db: Database, bot: Bot):
     # отправляем данные в бд
     data = await state.get_data()

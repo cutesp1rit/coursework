@@ -1,102 +1,154 @@
 import os
 from aiogram import F, Router, Bot
-from aiogram.types import Message, File
+from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from database.database import Database
 from app.handlers import commands_router
-from app.states.registration import RegistrationUser
 from app.keyboards.reg_kb import ChooseGender, Nickname, ChooseVoice
+from app.states.profile_states import ProfileStates
 
-registration_router = Router()
+profile_router = Router()
 voice_input_dir = "/usr/src/app/tg_bot/voice_input"
 
-@commands_router.message(Command('registration'))
-async def cmd_registration(message: Message, db: Database, state: FSMContext):
-    chat_type = message.chat.type
+SUPPORTED_LANGUAGES = {
+    'en': 'English',
+    'es': 'Spanish', 
+    'fr': 'French',
+    'de': 'German',
+    'it': 'Italian',
+    'pt': 'Portuguese',
+    'pl': 'Polish',
+    'tr': 'Turkish',
+    'ru': 'Russian',
+    'nl': 'Dutch',
+    'cs': 'Czech',
+    'ar': 'Arabic',
+    'zh-cn': 'Chinese',
+    'ja': 'Japanese',
+    'hu': 'Hungarian',
+    'ko': 'Korean'
+}
 
-    if chat_type == 'private':
-        user_id = str(message.from_user.id)
-
-        # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЯ НЕТ В БД!!!
-        if await db.is_user_exist(user_id):
-            await message.reply(f"Вы уже зарегистрированы.")
-            return
-
-        await state.set_state(RegistrationUser.get_gender)
-        await message.reply("Пожалуйста, выберите свой пол. Либо написав сообщение \"М\"\\\"Ж\", либо воспользовавшись кнопками.", reply_markup=ChooseGender())
-
-    else:
-        # в таком случае не реагируем
+@commands_router.message(Command('change_nickname'))
+async def cmd_change_nickname(message: Message, state: FSMContext, db: Database):
+    if message.chat.type != 'private':
+        await message.reply("Эта команда доступна только в личных сообщениях.")
+        return
+        
+    user_id = str(message.from_user.id)
+    if not await db.is_user_exist(user_id):
+        await message.reply("Сначала необходимо зарегистрироваться с помощью команды /registration")
         return
 
-@registration_router.message(RegistrationUser.get_gender)
-async def get_gender(message: Message, state: FSMContext):
-    if message.text == "М" or message.text == "Ж":
-        data = await state.get_data()
-        if message.text == "М":
-            await state.update_data(gender=False)
-        else:
-            await state.update_data(gender=True)
-        await state.set_state(RegistrationUser.get_nickname)
-        username = message.from_user.username
-        await message.reply("Теперь выберите, как называть вас при генерации диалога.", reply_markup=Nickname(username))
+    await state.set_state(ProfileStates.waiting_for_nickname)
+    username = message.from_user.username
+    await message.reply("Введите новый никнейм:", reply_markup=Nickname(username))
 
-@registration_router.message(RegistrationUser.get_nickname)
-async def get_nickname(message: Message, state: FSMContext):
-    data = await state.get_data()
-    await state.update_data(nickname=message.text)
-    await state.set_state(RegistrationUser.choose_voice)
-    await message.reply("Теперь выберите, использовать синтезированный голос по умолчанию или генерировать на основе вашего.", reply_markup=ChooseVoice())
-
-@registration_router.message(RegistrationUser.choose_voice)
-async def choose_voice(message: Message, state: FSMContext, db: Database):
-    if message.text == "Генерировать на основе синтезированного голоса":
-        data = await state.get_data()
-        user_id = str(message.from_user.id)
-
-        gender = data.get("gender")
-        nickname = data.get("nickname")
-
-        await db.add_user(user_id, gender, nickname, False)
-        await state.clear()
-        await message.reply("Вы зарегистрированы и можете пользоваться полным функционалом бота!")
-    elif message.text == "Генерировать на основе моего голоса":
-        await state.set_state(RegistrationUser.get_voice)
-        await message.reply("Отлично, тогда пришлите аудиофайл с вашим голосом.")
+@profile_router.message(ProfileStates.waiting_for_nickname)
+async def process_nickname_change(message: Message, state: FSMContext, db: Database):
+    user_id = str(message.from_user.id)
+    new_nickname = message.text
     
-@registration_router.message(RegistrationUser.get_voice, F.document | F.audio | F.voice)
-async def get_voice(message: Message, state: FSMContext, db: Database, bot: Bot):
-    # отправляем данные в бд
-    data = await state.get_data()
+    await db.update_nickname(user_id, new_nickname)
+    await state.clear()
+    await message.reply(f"Ваш никнейм успешно изменен на: {new_nickname}")
+
+@commands_router.message(Command('change_gender'))
+async def cmd_change_gender(message: Message, state: FSMContext, db: Database):
+    if message.chat.type != 'private':
+        await message.reply("Эта команда доступна только в личных сообщениях.")
+        return
+        
+    user_id = str(message.from_user.id)
+    if not await db.is_user_exist(user_id):
+        await message.reply("Сначала необходимо зарегистрироваться с помощью команды /registration")
+        return
+
+    await state.set_state(ProfileStates.waiting_for_gender)
+    await message.reply("Выберите пол:", reply_markup=ChooseGender())
+
+@profile_router.message(ProfileStates.waiting_for_gender)
+async def process_gender_change(message: Message, state: FSMContext, db: Database):
+    if message.text.upper() not in ["М", "Ж"]:
+        await message.reply("Пожалуйста, выберите М или Ж")
+        return
+        
+    user_id = str(message.from_user.id)
+    new_gender = False if message.text.upper() == "М" else True
+    
+    await db.update_gender(user_id, new_gender)
+    await state.clear()
+    await message.reply("Гендер успешно изменен")
+
+@commands_router.message(Command('change_voice'))
+async def cmd_change_voice(message: Message, state: FSMContext, db: Database):
+    if message.chat.type != 'private':
+        await message.reply("Эта команда доступна только в личных сообщениях.")
+        return
+        
+    user_id = str(message.from_user.id)
+    if not await db.is_user_exist(user_id):
+        await message.reply("Сначала необходимо зарегистрироваться с помощью команды /registration")
+        return
+
+    await state.set_state(ProfileStates.waiting_for_voice)
+    await message.reply("Выберите тип голоса:", reply_markup=ChooseVoice())
+
+@profile_router.message(ProfileStates.waiting_for_voice)
+async def process_voice_choice(message: Message, state: FSMContext, db: Database):
     user_id = str(message.from_user.id)
     
-    gender = data.get("gender")
-    nickname = data.get("nickname")
-    
-    file_id = None
-    if message.voice:
-        file_id = message.voice.file_id
-        extension = "ogg"
-    elif message.audio:
-        file_id = message.audio.file_id
-        extension = message.audio.file_name.split(".")[-1] if message.audio.file_name else "mp3"
-    # elif message.document:
-    #     file_id = message.document.file_id
-    #     extension = message.document.file_name.split(".")[-1] if message.document.file_name else "file"
-
-    if file_id:
-        telegram_file: File = await bot.get_file(file_id)
-
-        file_path = os.path.join(voice_input_dir, f"{user_id}.{extension}")
-
-        os.makedirs(voice_input_dir, exist_ok=True)
-
-        await bot.download_file(telegram_file.file_path, file_path)
-
-        # все прошло успешно - отправляем результат в БД
-        await db.add_user(user_id, gender, nickname, True)
-        await message.reply("Вы зарегистрированы и можете пользоваться полным функционалом бота!")
+    if message.text == "Генерировать на основе синтезированного голоса":
+        await db.update_voice(user_id, False)
         await state.clear()
+        await message.reply("Установлен синтезированный голос")
+    elif message.text == "Генерировать на основе моего голоса":
+        await message.reply("Отправьте аудиофайл с вашим голосом")
+        await state.set_state(ProfileStates.waiting_for_voice_file)
     else:
-        await message.reply("Не удалось обработать файл. Убедитесь, что вы отправили корректный аудиофайл.")
+        await message.reply("Пожалуйста, используйте кнопки для выбора")
+
+@profile_router.message(ProfileStates.waiting_for_voice_file, F.audio | F.voice)
+async def process_voice_file(message: Message, state: FSMContext, db: Database, bot: Bot):
+    user_id = str(message.from_user.id)
+    
+    file_id = message.voice.file_id if message.voice else message.audio.file_id
+    extension = "ogg" if message.voice else message.audio.file_name.split(".")[-1]
+    
+    telegram_file = await bot.get_file(file_id)
+    file_path = os.path.join(voice_input_dir, f"{user_id}.{extension}")
+    
+    os.makedirs(voice_input_dir, exist_ok=True)
+    await bot.download_file(telegram_file.file_path, file_path)
+    
+    await db.update_voice(user_id, True)
+    await state.clear()
+    await message.reply("Голос успешно обновлен")
+
+@commands_router.message(Command('change_lang'))
+async def cmd_change_language(message: Message, state: FSMContext, db: Database):
+    if message.chat.type != 'private':
+        await message.reply("Эта команда доступна только в личных сообщениях.")
+        return
+        
+    user_id = str(message.from_user.id)
+    if not await db.is_user_exist(user_id):
+        await message.reply("Сначала необходимо зарегистрироваться с помощью команды /registration")
+        return
+
+    await state.set_state(ProfileStates.waiting_for_language)
+    languages = "\n".join([f"{code} - {name}" for code, name in SUPPORTED_LANGUAGES.items()])
+    await message.reply(f"Выберите язык для генерации аудио. Введите код языка (например, ru или en):\n\nДоступные языки:\n{languages}")
+
+@profile_router.message(ProfileStates.waiting_for_language)
+async def process_language_change(message: Message, state: FSMContext, db: Database):
+    language_code = message.text.lower()
+    if language_code not in SUPPORTED_LANGUAGES:
+        await message.reply("Некорректный код языка. Пожалуйста, выберите из списка доступных.")
+        return
+        
+    user_id = str(message.from_user.id)
+    await db.update_language(user_id, language_code)
+    await state.clear()
+    await message.reply(f"Язык успешно изменен на {SUPPORTED_LANGUAGES[language_code]}")
