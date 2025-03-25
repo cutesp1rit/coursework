@@ -8,7 +8,8 @@ INIT_DB_QUERIES = [
         "nickname" varchar,
         "gender" boolean,
         "voice" boolean, 
-        "vmm" boolean 
+        "vmm" boolean,
+        "language" varchar DEFAULT 'ru'
     );
     """,
     """
@@ -114,7 +115,7 @@ class Database:
     # возвращает одного пользователя по его id
     async def get_user_by_id(self, telegram_user_id: str) -> dict:
         sql = """
-        SELECT telegram_user_id, nickname, gender, voice, vmm
+        SELECT telegram_user_id, nickname, gender, voice, vmm, language
         FROM users
         WHERE telegram_user_id = $1;
         """
@@ -150,18 +151,19 @@ class Database:
         row = await self.fetchrow(sql, telegram_user_id)
         return row is not None
 
-    async def add_user(self, telegram_user_id: str, gender: bool, nickname: str, voice: bool):
+    async def add_user(self, telegram_user_id: str, gender: bool, nickname: str, voice: bool, language: str = 'ru'):
         sql = """
-        INSERT INTO users (telegram_user_id, gender, nickname, voice, vmm)
-        VALUES ($1, $2, $3, $4, FALSE)
+        INSERT INTO users (telegram_user_id, gender, nickname, voice, vmm, language)
+        VALUES ($1, $2, $3, $4, FALSE, $5)
         ON CONFLICT (telegram_user_id)
         DO UPDATE SET 
             gender = EXCLUDED.gender,
             nickname = EXCLUDED.nickname,
             voice = EXCLUDED.voice,
-            vmm = EXCLUDED.vmm;
+            vmm = EXCLUDED.vmm,
+            language = EXCLUDED.language;
         """
-        await self.execute(sql, telegram_user_id, gender, nickname, voice)
+        await self.execute(sql, telegram_user_id, gender, nickname, voice, language)
     
     async def add_chat_message(self, message_id: str, chat_id: str, user_id: str, username: str, message_text: str, created_at: datetime):
         sql = """
@@ -201,4 +203,3 @@ class Database:
         LIMIT $3;
         """
         return await self.fetch(sql, str(chat_id), str(message_id), count)
-
