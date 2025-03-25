@@ -11,6 +11,25 @@ from app.keyboards.reg_kb import ChooseGender, Nickname, ChooseVoice
 registration_router = Router()
 voice_input_dir = "/usr/src/app/tg_bot/voice_input"
 
+SUPPORTED_LANGUAGES = {
+    'en': 'English',
+    'es': 'Spanish', 
+    'fr': 'French',
+    'de': 'German',
+    'it': 'Italian',
+    'pt': 'Portuguese',
+    'pl': 'Polish',
+    'tr': 'Turkish',
+    'ru': 'Russian',
+    'nl': 'Dutch',
+    'cs': 'Czech',
+    'ar': 'Arabic',
+    'zh-cn': 'Chinese',
+    'ja': 'Japanese',
+    'hu': 'Hungarian',
+    'ko': 'Korean'
+}
+
 @commands_router.message(Command('registration'))
 async def cmd_registration(message: Message, db: Database, state: FSMContext):
     chat_type = message.chat.type
@@ -46,6 +65,18 @@ async def get_gender(message: Message, state: FSMContext):
 async def get_nickname(message: Message, state: FSMContext):
     data = await state.get_data()
     await state.update_data(nickname=message.text)
+    await state.set_state(RegistrationUser.get_language)
+    languages = "\n".join([f"{code} - {name}" for code, name in SUPPORTED_LANGUAGES.items()])
+    await message.reply(f"Выберите язык для генерации аудио. Введите код языка (например, ru или en):\n\nДоступные языки:\n{languages}")
+
+@registration_router.message(RegistrationUser.get_language)
+async def get_language(message: Message, state: FSMContext):
+    language_code = message.text.lower()
+    if language_code not in SUPPORTED_LANGUAGES:
+        await message.reply("Некорректный код языка. Пожалуйста, выберите из списка доступных.")
+        return
+    
+    await state.update_data(language=language_code)
     await state.set_state(RegistrationUser.choose_voice)
     await message.reply("Теперь выберите, использовать синтезированный голос по умолчанию или генерировать на основе вашего.", reply_markup=ChooseVoice())
 
@@ -57,8 +88,9 @@ async def choose_voice(message: Message, state: FSMContext, db: Database):
 
         gender = data.get("gender")
         nickname = data.get("nickname")
+        language = data.get("language")
 
-        await db.add_user(user_id, gender, nickname, False)
+        await db.add_user(user_id, gender, nickname, False, language)
         await state.clear()
         await message.reply("Вы зарегистрированы и можете пользоваться полным функционалом бота!")
     elif message.text == "Генерировать на основе моего голоса":
@@ -73,6 +105,7 @@ async def get_voice(message: Message, state: FSMContext, db: Database, bot: Bot)
     
     gender = data.get("gender")
     nickname = data.get("nickname")
+    language = data.get("language")
     
     file_id = None
     if message.voice:
@@ -95,7 +128,7 @@ async def get_voice(message: Message, state: FSMContext, db: Database, bot: Bot)
         await bot.download_file(telegram_file.file_path, file_path)
 
         # все прошло успешно - отправляем результат в БД
-        await db.add_user(user_id, gender, nickname, True)
+        await db.add_user(user_id, gender, nickname, True, language)
         await message.reply("Вы зарегистрированы и можете пользоваться полным функционалом бота!")
         await state.clear()
     else:

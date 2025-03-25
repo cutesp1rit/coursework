@@ -55,7 +55,7 @@ async def cmd_start(message: Message, db: Database):
         # В таком случае не реагируем
         return
 
-# команда help
+# Команда help
 @commands_router.message(Command('help'))
 async def cmd_help(message: Message):
     help_message = """
@@ -78,7 +78,6 @@ async def cmd_help(message: Message):
    - Или напишите в поддержку: @cutespirit.  
 """
     await message.reply(help_message)
-
 # Команда profile
 @commands_router.message(Command('profile'))
 async def cmd_profile(message: Message, db: Database):
@@ -106,7 +105,8 @@ async def cmd_profile(message: Message, db: Database):
             f"👤 <b>Ваш профиль</b>\n"
             f"├ {gender_emoji} Пол: {gender_text}\n"
             f"├ 📛 Никнейм: {user['nickname'] or 'не установлен'}\n"
-            f"└ 🎙 Голос: {voice_status}\n\n"
+            f"├ 🎙 Голос: {voice_status}\n"
+            f"└ 🌐 Язык: {user['language']}\n\n"
             f"🔧 <b>Управление профилем</b>:\n"
             f"/change_nickname - изменить никнейм\n"
             f"/change_gender - выбрать пол голоса\n"
