@@ -76,7 +76,11 @@ async def cmd_vd(message: Message, db: Database):
     try:
         count = int(message.text.split(' ')[1])
         if count <= 0:
-            raise ValueError
+            await message.reply("Количество сообщений должно быть положительным числом.")
+            return
+        if count > 25:
+            await message.reply("Максимальное количество сообщений для диалога - 25. Пожалуйста, укажите число от 1 до 25.")
+            return
     except (IndexError, ValueError):
         await message.reply("Укажите корректное количество сообщений. Пример: /vd 6")
         return
