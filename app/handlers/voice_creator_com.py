@@ -33,6 +33,11 @@ async def cmd_vm(message: Message, db: Database):
     if not text_to_say:
         await message.reply("Сообщение, на которое вы ответили, не содержит текста.")
         return
+        
+    # Проверка на ограничение длины текста
+    if len(text_to_say) > 1000:
+        await message.reply("Текст слишком длинный. Максимальная длина для озвучки - 1000 символов.")
+        return
 
     await message.reply("Генерирую аудио для вас...")
     user_id = str(message.reply_to_message.from_user.id)
@@ -109,6 +114,11 @@ async def just_message(message: Message, state: FSMContext, db: Database):
         user_data = await db.users.get_by_id(user_id)
         
         if user_data and user_data.get("vmm"):
+            # Проверка ограничения на длину текста
+            if len(message.text) > 1000:
+                await message.reply("Текст слишком длинный. Максимальная длина для озвучки - 1000 символов.")
+                return
+                
             await message.reply("Генерирую аудио для вас...")
 
             output_path_wav = os.path.join(voice_output_dir, f"{user_id}_cloned.wav")
