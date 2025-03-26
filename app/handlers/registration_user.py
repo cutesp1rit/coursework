@@ -107,6 +107,12 @@ async def get_voice(message: Message, state: FSMContext, db: Database, bot: Bot)
     nickname = data.get("nickname")
     language = data.get("language")
     
+    # Проверка длительности голосового сообщения
+    duration = message.voice.duration if message.voice else message.audio.duration
+    if duration > 60:
+        await message.reply("Длительность голосового сообщения не должна превышать 60 секунд. Пожалуйста, отправьте более короткое сообщение.")
+        return
+    
     file_id = None
     if message.voice:
         file_id = message.voice.file_id

@@ -113,6 +113,12 @@ async def process_voice_choice(message: Message, state: FSMContext, db: Database
 async def process_voice_file(message: Message, state: FSMContext, db: Database, bot: Bot):
     user_id = str(message.from_user.id)
     
+    # Проверка длительности голосового сообщения
+    duration = message.voice.duration if message.voice else message.audio.duration
+    if duration > 60:
+        await message.reply("Длительность голосового сообщения не должна превышать 60 секунд. Пожалуйста, отправьте более короткое сообщение.")
+        return
+    
     user_data = await db.users.get_by_id(user_id)
     if user_data and user_data.get("voice"):
         file_pattern = os.path.join(voice_input_dir, f"{user_id}.*")
