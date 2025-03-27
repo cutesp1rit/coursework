@@ -1,4 +1,5 @@
 import os
+import asyncio
 
 from aiogram import F, Router
 from aiogram.types import Message, FSInputFile
@@ -42,16 +43,26 @@ async def cmd_vm(message: Message, db: Database):
     await message.reply("Генерирую аудио для вас...")
     user_id = str(message.reply_to_message.from_user.id)
 
+    # Запускаем генерацию в отдельной задаче
+    asyncio.create_task(process_voice_message(message, text_to_say, user_id, db))
+
+async def process_voice_message(message: Message, text_to_say: str, user_id: str, db: Database):
     output_path_wav = os.path.join(voice_output_dir, f"{user_id}_cloned.wav")
     output_path_ogg = os.path.join(voice_output_dir, f"{user_id}_cloned.ogg")
 
     await generate_voice_message(text_to_say, user_id, db, output_path_wav)
 
-    convert_wav_to_ogg(output_path_wav, output_path_ogg)
+    await convert_wav_to_ogg(output_path_wav, output_path_ogg)
+
+    # Проверяем, существует ли файл перед отправкой
+    if not os.path.exists(output_path_ogg):
+        await message.reply("Произошла ошибка при создании аудиофайла.")
+        return
 
     voice_file = FSInputFile(output_path_ogg)
     await message.answer_voice(voice_file)
 
+    # Удаляем файл после отправки
     if os.path.exists(output_path_ogg):
         os.remove(output_path_ogg)
 
@@ -92,7 +103,11 @@ async def cmd_vd(message: Message, db: Database):
         return
 
     await message.reply("Генерирую диалог для вас...")
+    
+    # Запускаем генерацию в отдельной задаче
+    asyncio.create_task(process_dialogue(message, messages, db))
 
+async def process_dialogue(message: Message, messages: list, db: Database):
     chat_id = str(message.chat.id)
 
     dialogue_texts = await format_dialogue(messages, db)
@@ -100,6 +115,11 @@ async def cmd_vd(message: Message, db: Database):
     audio_files = await generate_audio_for_dialogue(dialogue_texts, chat_id, db)
 
     final_audio_path = combine_audio_files(audio_files, chat_id)
+
+    # Проверяем, существует ли файл перед отправкой
+    if not os.path.exists(final_audio_path):
+        await message.reply("Произошла ошибка при создании аудиофайла.")
+        return
 
     voice_file = FSInputFile(final_audio_path)
     await message.reply_voice(voice_file)
@@ -124,18 +144,29 @@ async def just_message(message: Message, state: FSMContext, db: Database):
                 return
                 
             await message.reply("Генерирую аудио для вас...")
-
-            output_path_wav = os.path.join(voice_output_dir, f"{user_id}_cloned.wav")
-
-            await generate_voice_message(message.text, user_id, db, output_path_wav)
-
-            voice_file = FSInputFile(output_path_wav)
-            await message.answer_voice(voice_file)
-
-            if os.path.exists(output_path_wav):
-                os.remove(output_path_wav)
+            
+            # Запускаем генерацию в отдельной задаче
+            asyncio.create_task(process_private_voice_message(message, user_id, db))
 
     elif chat_type in ['group', 'supergroup']:
         await handle_group_message(message, db)
     else:
         return
+
+async def process_private_voice_message(message: Message, user_id: str, db: Database):
+    output_path_wav = os.path.join(voice_output_dir, f"{user_id}_cloned.wav")
+    output_path_ogg = os.path.join(voice_output_dir, f"{user_id}_cloned.ogg")
+
+    await generate_voice_message(message.text, user_id, db, output_path_wav)
+    await convert_wav_to_ogg(output_path_wav, output_path_ogg)
+    
+    # Проверяем, существует ли файл перед отправкой
+    if not os.path.exists(output_path_ogg):
+        await message.reply("Произошла ошибка при создании аудиофайла.")
+        return
+
+    voice_file = FSInputFile(output_path_ogg)
+    await message.answer_voice(voice_file)
+
+    if os.path.exists(output_path_ogg):
+        os.remove(output_path_ogg)
