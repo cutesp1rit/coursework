@@ -5,7 +5,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from database.database import Database
 from app.handlers import commands_router
-from app.keyboards.reg_kb import ChooseGender, Nickname, ChooseVoice
+from app.keyboards.reg_kb import сhoose_gender_kb, nickname_kb, choose_voice_kb
 from app.states.profile_states import ProfileStates
 
 profile_router = Router()
@@ -43,7 +43,7 @@ async def cmd_change_nickname(message: Message, state: FSMContext, db: Database)
 
     await state.set_state(ProfileStates.waiting_for_nickname)
     username = message.from_user.username
-    await message.reply("Введите новый никнейм:", reply_markup=Nickname(username))
+    await message.reply("Введите новый никнейм:", reply_markup=nickname_kb(username))
 
 @profile_router.message(ProfileStates.waiting_for_nickname)
 async def process_nickname_change(message: Message, state: FSMContext, db: Database):
@@ -66,7 +66,7 @@ async def cmd_change_gender(message: Message, state: FSMContext, db: Database):
         return
 
     await state.set_state(ProfileStates.waiting_for_gender)
-    await message.reply("Выберите пол:", reply_markup=ChooseGender())
+    await message.reply("Выберите пол:", reply_markup=сhoose_gender_kb())
 
 @profile_router.message(ProfileStates.waiting_for_gender)
 async def process_gender_change(message: Message, state: FSMContext, db: Database):
@@ -93,7 +93,7 @@ async def cmd_change_voice(message: Message, state: FSMContext, db: Database):
         return
 
     await state.set_state(ProfileStates.waiting_for_voice)
-    await message.reply("Выберите тип голоса:", reply_markup=ChooseVoice())
+    await message.reply("Выберите тип голоса:", reply_markup=choose_voice_kb())
 
 @profile_router.message(ProfileStates.waiting_for_voice)
 async def process_voice_choice(message: Message, state: FSMContext, db: Database):

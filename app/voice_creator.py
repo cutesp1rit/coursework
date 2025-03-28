@@ -20,7 +20,6 @@ tts.synthesizer.tts_model.inference_noise_scale = 0.2 # шум
 tts.synthesizer.tts_model.length_scale = 0.7  # темп речи
 tts.synthesizer.tts_model.inference_noise_scale_dp = 0.1  # шум
 
-print(device)
 final_output_dir = "/usr/src/app/tg_bot/voice_files"
 os.makedirs(final_output_dir, exist_ok=True)
 

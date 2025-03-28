@@ -1,18 +1,22 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-def ChooseGender():
+# ====================================================
+# МЕТОДЫ-КЛАВИАТУРЫ ПРИ РАБОТЕ С ДАННЫМИ ПОЛЬЗОВАТЕЛЯ
+# ====================================================
+
+def сhoose_gender_kb():
     gender = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="М"), KeyboardButton(text="Ж")]],
                                                 resize_keyboard=True,
                                                 one_time_keyboard=True)
     return gender
 
-def Nickname(user_name):
+def nickname_kb(user_name):
     nickname = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text=user_name)]],
                                                 resize_keyboard=True,
                                                 one_time_keyboard=True)
     return nickname
 
-def ChooseVoice():
+def choose_voice_kb():
     voice = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="Генерировать на основе синтезированного голоса")],
                                            [KeyboardButton(text="Генерировать на основе моего голоса")]
                                            ],

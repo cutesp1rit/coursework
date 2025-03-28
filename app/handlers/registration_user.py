@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from database.database import Database
 from app.handlers import commands_router
 from app.states.registration import RegistrationUser
-from app.keyboards.reg_kb import ChooseGender, Nickname, ChooseVoice
+from app.keyboards.reg_kb import сhoose_gender_kb, nickname_kb, choose_voice_kb
 
 registration_router = Router()
 voice_input_dir = "/usr/src/app/tg_bot/voice_input"
@@ -43,7 +43,7 @@ async def cmd_registration(message: Message, db: Database, state: FSMContext):
             return
 
         await state.set_state(RegistrationUser.get_gender)
-        await message.reply("Пожалуйста, выберите свой пол. Либо написав сообщение \"М\"\\\"Ж\", либо воспользовавшись кнопками.", reply_markup=ChooseGender())
+        await message.reply("Пожалуйста, выберите свой пол. Либо написав сообщение \"М\"\\\"Ж\", либо воспользовавшись кнопками.", reply_markup=сhoose_gender_kb())
 
     else:
         # в таком случае не реагируем
@@ -59,7 +59,7 @@ async def get_gender(message: Message, state: FSMContext):
             await state.update_data(gender=True)
         await state.set_state(RegistrationUser.get_nickname)
         username = message.from_user.username
-        await message.reply("Теперь выберите, как называть вас при генерации диалога.", reply_markup=Nickname(username))
+        await message.reply("Теперь выберите, как называть вас при генерации диалога.", reply_markup=nickname_kb(username))
 
 @registration_router.message(RegistrationUser.get_nickname)
 async def get_nickname(message: Message, state: FSMContext):
@@ -78,7 +78,7 @@ async def get_language(message: Message, state: FSMContext):
     
     await state.update_data(language=language_code)
     await state.set_state(RegistrationUser.choose_voice)
-    await message.reply("Теперь выберите, использовать синтезированный голос по умолчанию или генерировать на основе вашего.", reply_markup=ChooseVoice())
+    await message.reply("Теперь выберите, использовать синтезированный голос по умолчанию или генерировать на основе вашего.", reply_markup=choose_voice_kb())
 
 @registration_router.message(RegistrationUser.choose_voice)
 async def choose_voice(message: Message, state: FSMContext, db: Database):
