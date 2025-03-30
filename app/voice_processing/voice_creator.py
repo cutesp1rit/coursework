@@ -12,6 +12,7 @@ class VoiceCreator:
         self.voice_output_dir = "/usr/src/app/tg_bot/voice_output"
         self.final_output_dir = "/usr/src/app/tg_bot/voice_files"
         
+        os.makedirs(self.voice_input_dir, exist_ok=True)
         os.makedirs(self.voice_output_dir, exist_ok=True)
         os.makedirs(self.final_output_dir, exist_ok=True)
         

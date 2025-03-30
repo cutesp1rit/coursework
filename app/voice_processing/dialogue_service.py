@@ -1,3 +1,5 @@
+import os
+
 # ============================
 # Класс для работы с диалогами
 # ============================
@@ -7,6 +9,7 @@ class DialogueService:
         self.db = db
         self.tts_service = tts_service
         self.audio_service = audio_service
+        self.voice_output_dir = "/usr/src/app/tg_bot/voice_output"
         
     async def format_dialogue(self, messages: list) -> list:
         formatted_dialogue = []
@@ -57,7 +60,7 @@ class DialogueService:
         audio_files = []
         print(dialogue_texts)
         for idx, (user_id, text) in enumerate(dialogue_texts):
-            wav_path = f"chat_{chat_id}_part_{idx}.wav"
+            wav_path = os.path.join(self.voice_output_dir, f"chat_{chat_id}_part_{idx}.wav")
             await self.tts_service.generate_voice(
                 text=text,
                 output_path=wav_path,
