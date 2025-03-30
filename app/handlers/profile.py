@@ -93,23 +93,25 @@ async def cmd_change_voice(message: Message, state: FSMContext, db: Database):
         return
 
     await state.set_state(ProfileStates.waiting_for_voice)
-    await message.reply("Выберите тип голоса:", reply_markup=choose_voice_kb())
+    await message.reply("Выберите, каким голосом будут озвучиваться сообщения (ваш или голос бота):", reply_markup=choose_voice_kb())
 
 @profile_router.message(ProfileStates.waiting_for_voice)
 async def process_voice_choice(message: Message, state: FSMContext, db: Database):
     user_id = str(message.from_user.id)
     
-    if message.text == "Генерировать на основе синтезированного голоса":
+    if message.text == "Озвучивать голосом бота":
         await db.users.update_voice(user_id, False)
         await state.clear()
-        await message.reply("Установлен синтезированный голос")
-    elif message.text == "Генерировать на основе моего голоса":
-        await message.reply("Отправьте аудиофайл с вашим голосом")
+        await message.reply("Установлен голос бота")
+    elif message.text == "Озвучивать моим голосом":
+        await message.reply('''Отлично, тогда запишите голосовое сообщение с вашим голосом примерно на 15 секунд. Вот скрипт для вас:
+
+"Привет! Меня зовут [Имя]. Сегодня отличная погода, не так ли? Я проверяю, как звучит мой голос в этой системе. Один, два, три, четыре, пять... Хорошо! Теперь скажем: "Как быстро идут дела?" Отлично! Надеюсь, всё получится."''')
         await state.set_state(ProfileStates.waiting_for_voice_file)
     else:
         await message.reply("Пожалуйста, используйте кнопки для выбора")
 
-@profile_router.message(ProfileStates.waiting_for_voice_file, F.audio | F.voice)
+@profile_router.message(ProfileStates.waiting_for_voice_file, F.voice)
 async def process_voice_file(message: Message, state: FSMContext, db: Database, bot: Bot):
     user_id = str(message.from_user.id)
     

@@ -78,11 +78,11 @@ async def get_language(message: Message, state: FSMContext):
     
     await state.update_data(language=language_code)
     await state.set_state(RegistrationUser.choose_voice)
-    await message.reply("Теперь выберите, использовать синтезированный голос по умолчанию или генерировать на основе вашего.", reply_markup=choose_voice_kb())
+    await message.reply("Выберите, каким голосом будут озвучиваться сообщения (ваш или голос бота):", reply_markup=choose_voice_kb())
 
 @registration_router.message(RegistrationUser.choose_voice)
 async def choose_voice(message: Message, state: FSMContext, db: Database):
-    if message.text == "Генерировать на основе синтезированного голоса":
+    if message.text == "Озвучивать голосом бота":
         data = await state.get_data()
         user_id = str(message.from_user.id)
 
@@ -93,11 +93,15 @@ async def choose_voice(message: Message, state: FSMContext, db: Database):
         await db.users.add(user_id, gender, nickname, False, language)
         await state.clear()
         await message.reply("Вы зарегистрированы и можете пользоваться полным функционалом бота!")
-    elif message.text == "Генерировать на основе моего голоса":
+    elif message.text == "Озвучивать моим голосом":
         await state.set_state(RegistrationUser.get_voice)
-        await message.reply("Отлично, тогда пришлите аудиофайл с вашим голосом.")
+        await message.reply('''Отлично, тогда запишите голосовое сообщение с вашим голосом примерно на 15 секунд. Вот скрипт для вас:
+
+"Привет! Меня зовут [Имя]. Сегодня отличная погода, не так ли? Я проверяю, как звучит мой голос в этой системе. Один, два, три, четыре, пять... Хорошо! Теперь скажем: "Как быстро идут дела?" Отлично! Надеюсь, всё получится."''')
+    else:
+        await message.reply("Пожалуйста, используйте кнопки для выбора")
     
-@registration_router.message(RegistrationUser.get_voice, F.audio | F.voice)
+@registration_router.message(RegistrationUser.get_voice, F.voice)
 async def get_voice(message: Message, state: FSMContext, db: Database, bot: Bot):
     # отправляем данные в бд
     data = await state.get_data()

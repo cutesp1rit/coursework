@@ -17,8 +17,8 @@ def nickname_kb(user_name):
     return nickname
 
 def choose_voice_kb():
-    voice = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="Генерировать на основе синтезированного голоса")],
-                                           [KeyboardButton(text="Генерировать на основе моего голоса")]
+    voice = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="Озвучивать голосом бота")],
+                                           [KeyboardButton(text="Озвучивать моим голосом")]
                                            ],
                                                 resize_keyboard=True,
                                                 one_time_keyboard=True)
