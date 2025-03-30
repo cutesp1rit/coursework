@@ -21,8 +21,20 @@ class AudioService:
     
     def _convert_wav_to_ogg_sync(self, wav_path: str, ogg_path: str):
         audio = AudioSegment.from_wav(wav_path)
-        # Экспортируем с пониженным качеством (для ускорения)
-        audio.export(ogg_path, format="ogg", parameters=["-q:a", "0"])
+        
+        audio.export(
+            ogg_path,
+            format="ogg", 
+            codec="libopus",  # Используем Opus для формата голосового сообщения в Telegram
+            bitrate="24k",
+            parameters=[
+                "-ar", "24000",
+                "-ac", "1",
+                "-vbr", "on",
+                "-compression_level", "6"
+            ]
+        )
+        
         if os.path.exists(wav_path):
             os.remove(wav_path)
             

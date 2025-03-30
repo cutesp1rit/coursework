@@ -69,7 +69,7 @@ class VoiceCreator:
             return
 
         voice_file = FSInputFile(output_path_ogg)
-        await message.answer_voice(voice_file)
+        await message.reply_voice(voice_file)
 
         if os.path.exists(output_path_ogg):
             os.remove(output_path_ogg)
