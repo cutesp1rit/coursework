@@ -3,6 +3,7 @@ import os
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from database.database import Database
+from app.voice_processing.voice_creator import VoiceCreator
 
 # подключение роутеров
 from app.handlers import commands_router
@@ -29,9 +30,11 @@ async def main():
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
     db = Database()
+    voice_creator = VoiceCreator(db)
 
     dp["bot"] = bot
     dp["db"] = db
+    dp["voice_creator"] = voice_creator
 
     # Подключение к базе данных
     await db.connect()
