@@ -10,11 +10,9 @@ user_management_router = Router()
 # команда voice message mode (устанавливаем "мод" постоянной генерации аудиосообщений на любой текст)
 @commands_router.message(Command('vmm'))
 async def cmd_vmm(message: Message, db: Database):
-
     chat_type = message.chat.type
 
     if chat_type == 'private':
-        # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЬ ЕСТЬ В БД!!!
         user_id = str(message.from_user.id)
 
         if not await db.users.exists(user_id):
@@ -30,13 +28,11 @@ async def cmd_vmm(message: Message, db: Database):
 # команда stop voice message mode (оставнавливает "мод" постоянной генерации аудиосообщений на любой текст)
 @commands_router.message(Command('stop_vmm'))
 async def cmd_stop_vmm(message: Message, db: Database):
-    
     chat_type = message.chat.type
 
     if chat_type == 'private':
         user_id = str(message.from_user.id)
 
-        # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЬ ЕСТЬ В БД!!!
         if not await db.users.exists(user_id):
             await message.reply(f"Для того чтобы воспользоваться этой функцией, пожалуйста, зарегистрируйтесь командой /registration.")
             return
@@ -55,7 +51,6 @@ async def cmd_delete_data(message: Message, db: Database):
     if chat_type == 'private':
         user_id = str(message.from_user.id)
 
-        # ПРОВЕРИТЬ ЧТО ПОЛЬЗОВАТЕЛЬ ЕСТЬ В БД!!!
         if not await db.users.exists(user_id):
             await message.reply(f"Ваших данных нет в базе.")
             return
@@ -69,36 +64,15 @@ async def cmd_delete_data(message: Message, db: Database):
 
             matching_files = glob.glob(file_pattern)
 
-            if matching_files:
-                for file_path in matching_files:
+            for file_path in matching_files:
+                try:
                     os.remove(file_path)
+                except Exception:
+                    # Если не удалось удалить файл, продолжаем с остальными
+                    pass
 
         await db.users.delete(user_id)
         await message.reply(f"Ваши данные успешно удалены из базы!")
     else:
         # в таком случае не реагируем
-        return
-
-@commands_router.message(Command('get_users'))
-async def cmd_get_users(message: Message, db: Database):
-    chat_type = message.chat.type
-
-    if chat_type == 'private':
-        # Получаем всех пользователей для проверки
-        users = await db.users.get_all()
-
-        # Форматируем ответ с отображением всех 5 аргументов
-        users_list = "\n".join([
-            f"ID: {u['telegram_user_id']}, Никнейм: {u['nickname'] or 'Не указан'}, "
-            f"Пол: {'Женский' if u['gender'] else 'Мужской'}, "
-            f"Согласие на голос: {'Да' if u['voice'] else 'Нет'}, "
-            f"VMM: {'Включён' if u['vmm'] else 'Выключен'}"
-            for u in users
-        ])
-
-        # Отправляем пользователю список
-        await message.reply(f"Список пользователей:\n{users_list}")
-
-    else:
-        # В таком случае не реагируем
         return

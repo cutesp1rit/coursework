@@ -44,7 +44,6 @@ async def cmd_registration(message: Message, db: Database, state: FSMContext):
 
         await state.set_state(RegistrationUser.get_gender)
         await message.reply("Пожалуйста, выберите свой пол. Либо написав сообщение \"М\"\\\"Ж\", либо воспользовавшись кнопками.", reply_markup=сhoose_gender_kb())
-
     else:
         # в таком случае не реагируем
         return
@@ -52,18 +51,19 @@ async def cmd_registration(message: Message, db: Database, state: FSMContext):
 @registration_router.message(RegistrationUser.get_gender)
 async def get_gender(message: Message, state: FSMContext):
     if message.text.upper() == "М" or message.text.upper() == "Ж":
-        data = await state.get_data()
         if message.text.upper() == "М":
             await state.update_data(gender=False)
         else:
             await state.update_data(gender=True)
+        
         await state.set_state(RegistrationUser.get_nickname)
         username = message.from_user.username
         await message.reply("Теперь выберите, как называть вас при генерации диалога.", reply_markup=nickname_kb(username))
+    else:
+        await message.reply("Пожалуйста, выберите М или Ж")
 
 @registration_router.message(RegistrationUser.get_nickname)
 async def get_nickname(message: Message, state: FSMContext):
-    data = await state.get_data()
     await state.update_data(nickname=message.text)
     await state.set_state(RegistrationUser.get_language)
     languages = "\n".join([f"{code} - {name}" for code, name in SUPPORTED_LANGUAGES.items()])
@@ -103,40 +103,46 @@ async def choose_voice(message: Message, state: FSMContext, db: Database):
     
 @registration_router.message(RegistrationUser.get_voice, F.voice)
 async def get_voice(message: Message, state: FSMContext, db: Database, bot: Bot):
-    # отправляем данные в бд
-    data = await state.get_data()
-    user_id = str(message.from_user.id)
-    
-    gender = data.get("gender")
-    nickname = data.get("nickname")
-    language = data.get("language")
-    
-    # Проверка длительности голосового сообщения
-    duration = message.voice.duration if message.voice else message.audio.duration
-    if duration > 60:
-        await message.reply("Длительность голосового сообщения не должна превышать 60 секунд. Пожалуйста, отправьте более короткое сообщение.")
-        return
-    
-    file_id = None
-    if message.voice:
-        file_id = message.voice.file_id
-        extension = "ogg"
-    elif message.audio:
-        file_id = message.audio.file_id
-        extension = message.audio.file_name.split(".")[-1] if message.audio.file_name else "mp3"
+    try:
+        # отправляем данные в бд
+        data = await state.get_data()
+        user_id = str(message.from_user.id)
+        
+        gender = data.get("gender")
+        nickname = data.get("nickname")
+        language = data.get("language")
+        
+        # Проверка длительности голосового сообщения
+        duration = message.voice.duration if message.voice else message.audio.duration
+        if duration > 60:
+            await message.reply("Длительность голосового сообщения не должна превышать 60 секунд. Пожалуйста, отправьте более короткое сообщение.")
+            return
+        
+        file_id = None
+        if message.voice:
+            file_id = message.voice.file_id
+            extension = "ogg"
+        elif message.audio:
+            file_id = message.audio.file_id
+            extension = message.audio.file_name.split(".")[-1] if message.audio.file_name else "mp3"
 
-    if file_id:
+        if not file_id:
+            await message.reply("Не удалось обработать файл. Убедитесь, что вы отправили корректный аудиофайл.")
+            return
+
         telegram_file: File = await bot.get_file(file_id)
-
-        file_path = os.path.join(voice_input_dir, f"{user_id}.{extension}")
-
+        
+        # Создаем директорию, если она не существует
         os.makedirs(voice_input_dir, exist_ok=True)
-
+        
+        file_path = os.path.join(voice_input_dir, f"{user_id}.{extension}")
+        
+        # Скачиваем файл
         await bot.download_file(telegram_file.file_path, file_path)
 
         # все прошло успешно - отправляем результат в БД
         await db.users.add(user_id, gender, nickname, True, language)
-        await message.reply("Вы зарегистрированы и можете пользоваться полным функционалом бота!")
         await state.clear()
-    else:
-        await message.reply("Не удалось обработать файл. Убедитесь, что вы отправили корректный аудиофайл.")
+        await message.reply("Вы зарегистрированы и можете пользоваться полным функционалом бота!")
+    except Exception:
+        await message.reply("Не удалось обработать голосовое сообщение. Пожалуйста, попробуйте еще раз.")

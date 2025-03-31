@@ -25,26 +25,29 @@ class VoiceCreator:
         await self.tts_service.generate_voice(text, output_path, user_id=user_id)
 
     async def handle_group_message(self, message: Message):
-        chat_id = str(message.chat.id)
-        user_id = str(message.from_user.id)
-        username = message.from_user.username
-        message_text = message.text
-        created_at = datetime.now()
+        try:
+            chat_id = str(message.chat.id)
+            user_id = str(message.from_user.id)
+            username = message.from_user.username
+            message_text = message.text
+            created_at = datetime.now()
 
-        await self.db.messages.add(
-            message_id=str(message.message_id),
-            chat_id=chat_id,
-            user_id=user_id,
-            username=username,
-            message_text=message_text,
-            created_at=created_at,
-        )
+            await self.db.messages.add(
+                message_id=str(message.message_id),
+                chat_id=chat_id,
+                user_id=user_id,
+                username=username,
+                message_text=message_text,
+                created_at=created_at,
+            )
 
-        message_count = await self.db.messages.get_count(chat_id)
-        if message_count > 1000:
-            oldest_message_id = await self.db.messages.get_oldest_message_id(chat_id)
-            if oldest_message_id:
-                await self.db.messages.delete(oldest_message_id)
+            message_count = await self.db.messages.get_count(chat_id)
+            if message_count > 1000:
+                oldest_message_id = await self.db.messages.get_oldest_message_id(chat_id)
+                if oldest_message_id:
+                    await self.db.messages.delete(oldest_message_id)
+        except Exception as e:
+            print(f"Ошибка при обработке группового сообщения: {e}")
 
     async def process_dialogue(self, messages: list, chat_id: str):
         """Обрабатывает диалог и создает аудио"""
@@ -59,36 +62,42 @@ class VoiceCreator:
 
     async def process_voice_message(self, message: Message, text: str, user_id: str):
         """Обрабатывает команду генерации голосового сообщения"""
-        output_path_wav = os.path.join(self.voice_output_dir, f"{user_id}_cloned.wav")
-        output_path_ogg = os.path.join(self.voice_output_dir, f"{user_id}_cloned.ogg")
+        try:
+            output_path_wav = os.path.join(self.voice_output_dir, f"{user_id}_cloned.wav")
+            output_path_ogg = os.path.join(self.voice_output_dir, f"{user_id}_cloned.ogg")
 
-        await self.generate_voice_message(text, user_id, output_path_wav)
-        await self.audio_service.convert_wav_to_ogg(output_path_wav, output_path_ogg)
+            await self.generate_voice_message(text, user_id, output_path_wav)
+            await self.audio_service.convert_wav_to_ogg(output_path_wav, output_path_ogg)
 
-        if not os.path.exists(output_path_ogg):
-            await message.reply("Произошла ошибка при создании аудиофайла.")
-            return
+            if not os.path.exists(output_path_ogg):
+                await message.reply("Произошла ошибка при создании аудиофайла.")
+                return
 
-        voice_file = FSInputFile(output_path_ogg)
-        await message.reply_voice(voice_file)
-
-        if os.path.exists(output_path_ogg):
-            os.remove(output_path_ogg)
+            voice_file = FSInputFile(output_path_ogg)
+            await message.reply_voice(voice_file)
+        except Exception as e:
+            await message.reply(f"Произошла ошибка при генерации голосового сообщения.")
+        finally:
+            if os.path.exists(output_path_ogg):
+                os.remove(output_path_ogg)
 
     async def process_private_voice_message(self, message: Message, user_id: str):
-        """Обрабатывает приватное голосовое сообщение"""
-        output_path_wav = os.path.join(self.voice_output_dir, f"{user_id}_cloned.wav")
-        output_path_ogg = os.path.join(self.voice_output_dir, f"{user_id}_cloned.ogg")
+        """Обрабатывает приватное сообщение и генерирует голосовое сообщение"""
+        try:
+            output_path_wav = os.path.join(self.voice_output_dir, f"{user_id}_cloned.wav")
+            output_path_ogg = os.path.join(self.voice_output_dir, f"{user_id}_cloned.ogg")
 
-        await self.generate_voice_message(message.text, user_id, output_path_wav)
-        await self.audio_service.convert_wav_to_ogg(output_path_wav, output_path_ogg)
-        
-        if not os.path.exists(output_path_ogg):
-            await message.reply("Произошла ошибка при создании аудиофайла.")
-            return
+            await self.generate_voice_message(message.text, user_id, output_path_wav)
+            await self.audio_service.convert_wav_to_ogg(output_path_wav, output_path_ogg)
+            
+            if not os.path.exists(output_path_ogg):
+                await message.reply("Произошла ошибка при создании аудиофайла.")
+                return
 
-        voice_file = FSInputFile(output_path_ogg)
-        await message.answer_voice(voice_file)
-
-        if os.path.exists(output_path_ogg):
-            os.remove(output_path_ogg)
+            voice_file = FSInputFile(output_path_ogg)
+            await message.answer_voice(voice_file)
+        except Exception as e:
+            await message.reply(f"Произошла ошибка при генерации голосового сообщения.")
+        finally:
+            if os.path.exists(output_path_ogg):
+                os.remove(output_path_ogg)

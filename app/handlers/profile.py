@@ -121,26 +121,37 @@ async def process_voice_file(message: Message, state: FSMContext, db: Database, 
         await message.reply("Длительность голосового сообщения не должна превышать 60 секунд. Пожалуйста, отправьте более короткое сообщение.")
         return
     
-    user_data = await db.users.get_by_id(user_id)
-    if user_data and user_data.get("voice"):
-        file_pattern = os.path.join(voice_input_dir, f"{user_id}.*")
-        matching_files = glob.glob(file_pattern)
-        if matching_files:
+    try:
+        user_data = await db.users.get_by_id(user_id)
+        if user_data and user_data.get("voice"):
+            file_pattern = os.path.join(voice_input_dir, f"{user_id}.*")
+            matching_files = glob.glob(file_pattern)
             for file_path in matching_files:
-                os.remove(file_path)
-    
-    file_id = message.voice.file_id if message.voice else message.audio.file_id
-    extension = "ogg" if message.voice else message.audio.file_name.split(".")[-1]
-    
-    telegram_file = await bot.get_file(file_id)
-    file_path = os.path.join(voice_input_dir, f"{user_id}.{extension}")
-    
-    os.makedirs(voice_input_dir, exist_ok=True)
-    await bot.download_file(telegram_file.file_path, file_path)
-    
-    await db.users.update_voice(user_id, True)
-    await state.clear()
-    await message.reply("Голос успешно обновлен")
+                try:
+                    os.remove(file_path)
+                except OSError:
+                    # Продолжаем выполнение даже если не удалось удалить старый файл
+                    pass
+        
+        file_id = message.voice.file_id if message.voice else message.audio.file_id
+        extension = "ogg" if message.voice else message.audio.file_name.split(".")[-1]
+        
+        telegram_file = await bot.get_file(file_id)
+        file_path = os.path.join(voice_input_dir, f"{user_id}.{extension}")
+        
+        try:
+            os.makedirs(voice_input_dir, exist_ok=True)
+            await bot.download_file(telegram_file.file_path, file_path)
+        except Exception:
+            await message.reply("Не удалось сохранить голосовое сообщение. Пожалуйста, попробуйте еще раз.")
+            return
+        
+        await db.users.update_voice(user_id, True)
+        await state.clear()
+        await message.reply("Голос успешно обновлен")
+    except Exception:
+        await state.clear()
+        await message.reply("Произошла ошибка при обработке голосового сообщения. Пожалуйста, попробуйте позже.")
 
 @commands_router.message(Command('change_lang'))
 async def cmd_change_language(message: Message, state: FSMContext, db: Database):
@@ -165,6 +176,10 @@ async def process_language_change(message: Message, state: FSMContext, db: Datab
         return
         
     user_id = str(message.from_user.id)
-    await db.users.update_language(user_id, language_code)
-    await state.clear()
-    await message.reply(f"Язык успешно изменен на {SUPPORTED_LANGUAGES[language_code]}")
+    try:
+        await db.users.update_language(user_id, language_code)
+        await state.clear()
+        await message.reply(f"Язык успешно изменен на {SUPPORTED_LANGUAGES[language_code]}")
+    except Exception:
+        await state.clear()
+        await message.reply("Не удалось изменить язык. Пожалуйста, попробуйте позже.")

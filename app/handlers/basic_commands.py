@@ -78,6 +78,7 @@ async def cmd_help(message: Message):
    - Или напишите в поддержку: @cutespirit.  
 """
     await message.reply(help_message)
+    
 # Команда profile
 @commands_router.message(Command('profile'))
 async def cmd_profile(message: Message, db: Database):
