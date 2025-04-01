@@ -5,7 +5,7 @@ from aiogram.types import Message, FSInputFile
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from database.database import Database
+from database_vm.database import Database
 from app.handlers import commands_router
 from app.voice_processing.voice_creator import VoiceCreator
 

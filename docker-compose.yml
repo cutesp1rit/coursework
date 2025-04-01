@@ -37,17 +37,16 @@ services:
   tests:
     build: .
     container_name: tgbot-tests
-    working_dir: "/usr/src/app/tg_bot"
+    working_dir: "/usr/src/app"
     volumes:
-      - .:/usr/src/app/tg_bot
-    command: pytest -v --cov=. --cov-report=term-missing
+      - .:/usr/src/app
+    command: sh -c "PYTHONPATH=/usr/src/app pytest database_vm/test/ -v --cov=. --cov-report=term-missing"
     env_file:
       - ".env"
     depends_on:
       - db
     networks:
       - tg_bot
-
 
 volumes:
   db_data:

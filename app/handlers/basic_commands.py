@@ -1,7 +1,7 @@
 from aiogram.types import Message
 from aiogram.filters import CommandStart, Command
 from app.handlers import commands_router
-from database.database import Database
+from database_vm.database import Database
 
 # Команда start
 @commands_router.message(CommandStart())

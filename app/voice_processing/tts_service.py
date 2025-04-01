@@ -6,7 +6,7 @@ from io import StringIO
 import sys
 from TTS.api import TTS
 from concurrent.futures import ThreadPoolExecutor
-from database.database import Database
+from database_vm.database import Database
 
 # ============================
 # Класс для TTS сервиса

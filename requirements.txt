@@ -3,4 +3,6 @@ asyncpg~=0.25.0
 torch==2.5.0
 TTS
 pydub
+pytest-cov==4.1.0
 pytest
+pytest-asyncio

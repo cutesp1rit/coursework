@@ -2,7 +2,7 @@ import asyncio
 import os
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from database.database import Database
+from database_vm.database import Database
 from app.voice_processing.voice_creator import VoiceCreator
 
 # подключение роутеров

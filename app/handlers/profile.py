@@ -3,7 +3,7 @@ from aiogram import F, Router, Bot
 from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from database.database import Database
+from database_vm.database import Database
 from app.handlers import commands_router
 from app.keyboards.reg_kb import сhoose_gender_kb, nickname_kb, choose_voice_kb
 from app.states.profile_states import ProfileStates

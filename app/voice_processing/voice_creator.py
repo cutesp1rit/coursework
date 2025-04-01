@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from aiogram.types import Message, FSInputFile
-from database.database import Database
+from database_vm.database import Database
 from app.voice_processing.tts_service import TTSService 
 from app.voice_processing.audio_service import AudioService
 from app.voice_processing.dialogue_service import DialogueService
@@ -62,24 +62,21 @@ class VoiceCreator:
 
     async def process_voice_message(self, message: Message, text: str, user_id: str):
         """Обрабатывает команду генерации голосового сообщения"""
-        try:
-            output_path_wav = os.path.join(self.voice_output_dir, f"{user_id}_cloned.wav")
-            output_path_ogg = os.path.join(self.voice_output_dir, f"{user_id}_cloned.ogg")
+        output_path_wav = os.path.join(self.voice_output_dir, f"{user_id}_cloned.wav")
+        output_path_ogg = os.path.join(self.voice_output_dir, f"{user_id}_cloned.ogg")
 
-            await self.generate_voice_message(text, user_id, output_path_wav)
-            await self.audio_service.convert_wav_to_ogg(output_path_wav, output_path_ogg)
+        await self.generate_voice_message(text, user_id, output_path_wav)
+        await self.audio_service.convert_wav_to_ogg(output_path_wav, output_path_ogg)
 
-            if not os.path.exists(output_path_ogg):
-                await message.reply("Произошла ошибка при создании аудиофайла.")
-                return
+        if not os.path.exists(output_path_ogg):
+            await message.reply("Произошла ошибка при создании аудиофайла.")
+            return
 
-            voice_file = FSInputFile(output_path_ogg)
-            await message.reply_voice(voice_file)
-        except Exception as e:
-            await message.reply(f"Произошла ошибка при генерации голосового сообщения.")
-        finally:
-            if os.path.exists(output_path_ogg):
-                os.remove(output_path_ogg)
+        voice_file = FSInputFile(output_path_ogg)
+        await message.reply_voice(voice_file)
+        
+        if os.path.exists(output_path_ogg):
+            os.remove(output_path_ogg)
 
     async def process_private_voice_message(self, message: Message, user_id: str):
         """Обрабатывает приватное сообщение и генерирует голосовое сообщение"""

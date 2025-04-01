@@ -2,7 +2,7 @@ from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command
 import os, glob
-from database.database import Database
+from database_vm.database import Database
 from app.handlers import commands_router
 
 user_management_router = Router()
