@@ -51,39 +51,47 @@ class VoiceCreator:
 
     async def process_dialogue(self, messages: list, chat_id: str):
         """Обрабатывает диалог и создает аудио"""
-        formatted_dialogue = await self.dialogue_service.format_dialogue(messages)
-        final_path = await self.dialogue_service.generate_dialogue_audio(formatted_dialogue, chat_id)
-        
-        if final_path:
-            ogg_path = final_path.replace('.wav', '.ogg')
-            await self.audio_service.convert_wav_to_ogg(final_path, ogg_path)
-            return ogg_path
-        return None
+        try:
+            formatted_dialogue = await self.dialogue_service.format_dialogue(messages)
+            final_path = await self.dialogue_service.generate_dialogue_audio(formatted_dialogue, chat_id)
+            
+            if final_path:
+                ogg_path = final_path.replace('.wav', '.ogg')
+                await self.audio_service.convert_wav_to_ogg(final_path, ogg_path)
+                return ogg_path
+            return None
+        except Exception as e:
+            print(f"Ошибка при обработке диалога для чата {chat_id}: {e}")
+            return None
 
     async def process_voice_message(self, message: Message, text: str, user_id: str):
         """Обрабатывает команду генерации голосового сообщения"""
-        output_path_wav = os.path.join(self.voice_output_dir, f"{user_id}_cloned.wav")
-        output_path_ogg = os.path.join(self.voice_output_dir, f"{user_id}_cloned.ogg")
-
-        await self.generate_voice_message(text, user_id, output_path_wav)
-        await self.audio_service.convert_wav_to_ogg(output_path_wav, output_path_ogg)
-
-        if not os.path.exists(output_path_ogg):
-            await message.reply("Произошла ошибка при создании аудиофайла.")
-            return
-
-        voice_file = FSInputFile(output_path_ogg)
-        await message.reply_voice(voice_file)
-        
-        if os.path.exists(output_path_ogg):
-            os.remove(output_path_ogg)
-
-    async def process_private_voice_message(self, message: Message, user_id: str):
-        """Обрабатывает приватное сообщение и генерирует голосовое сообщение"""
         try:
             output_path_wav = os.path.join(self.voice_output_dir, f"{user_id}_cloned.wav")
             output_path_ogg = os.path.join(self.voice_output_dir, f"{user_id}_cloned.ogg")
 
+            await self.generate_voice_message(text, user_id, output_path_wav)
+            await self.audio_service.convert_wav_to_ogg(output_path_wav, output_path_ogg)
+
+            if not os.path.exists(output_path_ogg):
+                await message.reply("Произошла ошибка при создании аудиофайла.")
+                return
+
+            voice_file = FSInputFile(output_path_ogg)
+            await message.reply_voice(voice_file)
+        except Exception as e:
+            print(f"Ошибка при обработке голосового сообщения для пользователя {user_id}: {e}")
+            await message.reply("Произошла ошибка при создании аудиофайла.")
+        finally:
+            if os.path.exists(output_path_ogg):
+                os.remove(output_path_ogg)
+
+    async def process_private_voice_message(self, message: Message, user_id: str):
+        """Обрабатывает приватное сообщение и генерирует голосовое сообщение"""
+        output_path_wav = os.path.join(self.voice_output_dir, f"{user_id}_cloned.wav")
+        output_path_ogg = os.path.join(self.voice_output_dir, f"{user_id}_cloned.ogg")
+        
+        try:
             await self.generate_voice_message(message.text, user_id, output_path_wav)
             await self.audio_service.convert_wav_to_ogg(output_path_wav, output_path_ogg)
             
@@ -94,6 +102,7 @@ class VoiceCreator:
             voice_file = FSInputFile(output_path_ogg)
             await message.answer_voice(voice_file)
         except Exception as e:
+            print(f"Ошибка при обработке приватного голосового сообщения для пользователя {user_id}: {e}")
             await message.reply(f"Произошла ошибка при генерации голосового сообщения.")
         finally:
             if os.path.exists(output_path_ogg):

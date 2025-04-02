@@ -64,7 +64,6 @@ class DialogueService:
     async def generate_dialogue_audio(self, dialogue_texts, chat_id):
         audio_files = []
         try:
-            print(dialogue_texts)
             for idx, (user_id, text) in enumerate(dialogue_texts):
                 wav_path = os.path.join(self.voice_output_dir, f"chat_{chat_id}_part_{idx}.wav")
                 await self.tts_service.generate_voice(
@@ -73,8 +72,10 @@ class DialogueService:
                     user_id=user_id
                 )
                 audio_files.append(wav_path)
-                
-            return self.audio_service.combine_audio_files(audio_files, chat_id)
+            
+            result = self.audio_service.combine_audio_files(audio_files, chat_id)
+            print(f"Аудио диалог для чата {chat_id} успешно сгенерирован")
+            return result
         except Exception as e:
             print(f"Ошибка при генерации аудио диалога: {e}")
             # Очищаем временные файлы в случае ошибки
@@ -82,5 +83,5 @@ class DialogueService:
                 if os.path.exists(file_path):
                     try:
                         os.remove(file_path)
-                    except:
-                        pass
+                    except Exception as cleanup_error:
+                        print(f"Не удалось удалить временный файл {file_path}: {cleanup_error}")
