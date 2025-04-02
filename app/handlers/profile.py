@@ -37,7 +37,14 @@ async def cmd_change_nickname(message: Message, state: FSMContext, db: Database)
         return
         
     user_id = str(message.from_user.id)
-    if not await db.users.exists(user_id):
+    try:
+        user_exists = await db.users.exists(user_id)
+    except Exception as e:
+        print(f"Ошибка при проверке существования пользователя: {e}")
+        await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+        return
+        
+    if not user_exists:
         await message.reply("Сначала необходимо зарегистрироваться с помощью команды /registration")
         return
 
@@ -50,7 +57,13 @@ async def process_nickname_change(message: Message, state: FSMContext, db: Datab
     user_id = str(message.from_user.id)
     new_nickname = message.text
     
-    await db.users.update_nickname(user_id, new_nickname)
+    try:
+        await db.users.update_nickname(user_id, new_nickname)
+    except Exception as e:
+        print(f"Ошибка при обновлении никнейма пользователя {user_id}: {e}")
+        await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+        return
+        
     await state.clear()
     await message.reply(f"Ваш никнейм успешно изменен на: {new_nickname}")
 
@@ -61,7 +74,14 @@ async def cmd_change_gender(message: Message, state: FSMContext, db: Database):
         return
         
     user_id = str(message.from_user.id)
-    if not await db.users.exists(user_id):
+    try:
+        user_exists = await db.users.exists(user_id)
+    except Exception as e:
+        print(f"Ошибка при проверке существования пользователя: {e}")
+        await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+        return
+        
+    if not user_exists:
         await message.reply("Сначала необходимо зарегистрироваться с помощью команды /registration")
         return
 
@@ -77,7 +97,13 @@ async def process_gender_change(message: Message, state: FSMContext, db: Databas
     user_id = str(message.from_user.id)
     new_gender = False if message.text.upper() == "М" else True
     
-    await db.users.update_gender(user_id, new_gender)
+    try:
+        await db.users.update_gender(user_id, new_gender)
+    except Exception as e:
+        print(f"Ошибка при обновлении пола пользователя {user_id}: {e}")
+        await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+        return
+        
     await state.clear()
     await message.reply("Гендер успешно изменен")
 
@@ -88,7 +114,14 @@ async def cmd_change_voice(message: Message, state: FSMContext, db: Database):
         return
         
     user_id = str(message.from_user.id)
-    if not await db.users.exists(user_id):
+    try:
+        user_exists = await db.users.exists(user_id)
+    except Exception as e:
+        print(f"Ошибка при проверке существования пользователя: {e}")
+        await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+        return
+        
+    if not user_exists:
         await message.reply("Сначала необходимо зарегистрироваться с помощью команды /registration")
         return
 
@@ -100,7 +133,13 @@ async def process_voice_choice(message: Message, state: FSMContext, db: Database
     user_id = str(message.from_user.id)
     
     if message.text == "Озвучивать голосом бота":
-        await db.users.update_voice(user_id, False)
+        try:
+            await db.users.update_voice(user_id, False)
+        except Exception as e:
+            print(f"Ошибка при обновлении голоса пользователя {user_id}: {e}")
+            await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+            return
+            
         await state.clear()
         await message.reply("Установлен голос бота")
     elif message.text == "Озвучивать моим голосом":
@@ -122,14 +161,21 @@ async def process_voice_file(message: Message, state: FSMContext, db: Database, 
         return
     
     try:
-        user_data = await db.users.get_by_id(user_id)
+        try:
+            user_data = await db.users.get_by_id(user_id)
+        except Exception as e:
+            print(f"Ошибка при получении данных пользователя {user_id}: {e}")
+            await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+            return
+            
         if user_data and user_data.get("voice"):
             file_pattern = os.path.join(voice_input_dir, f"{user_id}.*")
             matching_files = glob.glob(file_pattern)
             for file_path in matching_files:
                 try:
                     os.remove(file_path)
-                except OSError:
+                except OSError as e:
+                    print(f"Не удалось удалить старый файл голоса {file_path}: {e}")
                     # Продолжаем выполнение даже если не удалось удалить старый файл
                     pass
         
@@ -142,14 +188,22 @@ async def process_voice_file(message: Message, state: FSMContext, db: Database, 
         try:
             os.makedirs(voice_input_dir, exist_ok=True)
             await bot.download_file(telegram_file.file_path, file_path)
-        except Exception:
+        except Exception as e:
+            print(f"Ошибка при сохранении голосового сообщения пользователя {user_id}: {e}")
             await message.reply("Не удалось сохранить голосовое сообщение. Пожалуйста, попробуйте еще раз.")
             return
         
-        await db.users.update_voice(user_id, True)
+        try:
+            await db.users.update_voice(user_id, True)
+        except Exception as e:
+            print(f"Ошибка при обновлении голоса пользователя {user_id}: {e}")
+            await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+            return
+            
         await state.clear()
         await message.reply("Голос успешно обновлен")
-    except Exception:
+    except Exception as e:
+        print(f"Непредвиденная ошибка при обработке голосового сообщения пользователя {user_id}: {e}")
         await state.clear()
         await message.reply("Произошла ошибка при обработке голосового сообщения. Пожалуйста, попробуйте позже.")
 
@@ -160,7 +214,14 @@ async def cmd_change_language(message: Message, state: FSMContext, db: Database)
         return
         
     user_id = str(message.from_user.id)
-    if not await db.users.exists(user_id):
+    try:
+        user_exists = await db.users.exists(user_id)
+    except Exception as e:
+        print(f"Ошибка при проверке существования пользователя: {e}")
+        await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+        return
+        
+    if not user_exists:
         await message.reply("Сначала необходимо зарегистрироваться с помощью команды /registration")
         return
 
@@ -180,6 +241,7 @@ async def process_language_change(message: Message, state: FSMContext, db: Datab
         await db.users.update_language(user_id, language_code)
         await state.clear()
         await message.reply(f"Язык успешно изменен на {SUPPORTED_LANGUAGES[language_code]}")
-    except Exception:
+    except Exception as e:
+        print(f"Ошибка при обновлении языка пользователя {user_id}: {e}")
         await state.clear()
-        await message.reply("Не удалось изменить язык. Пожалуйста, попробуйте позже.")
+        await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")

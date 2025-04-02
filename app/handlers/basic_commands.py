@@ -10,7 +10,12 @@ async def cmd_start(message: Message, db: Database):
 
     if chat_type == 'private':
         user_id = str(message.from_user.id)
-        user_is_registered = await db.users.exists(user_id)
+        try:
+            user_is_registered = await db.users.exists(user_id)
+        except Exception as e:
+            print(f"Ошибка при проверке регистрации пользователя: {e}")
+            await message.answer("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+            return
 
         start_message_private = """
 👋 Привет! Я голосовой бот для преобразования текста в речь.
@@ -86,7 +91,13 @@ async def cmd_profile(message: Message, db: Database):
     user_id = str(message.from_user.id)
 
     if chat_type == "private":  # Личный чат
-        user = await db.users.get_by_id(user_id)
+        try:
+            user = await db.users.get_by_id(user_id)
+        except Exception as e:
+            print(f"Ошибка при получении данных пользователя: {e}")
+            await message.answer("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+            return
+            
         if not user:
             await message.answer(
                 "🚀 Вы не зарегистрированы.\n"

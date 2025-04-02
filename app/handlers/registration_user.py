@@ -38,7 +38,14 @@ async def cmd_registration(message: Message, db: Database, state: FSMContext):
         user_id = str(message.from_user.id)
 
         # Проверяем, существует ли пользователь в БД
-        if await db.users.exists(user_id):
+        try:
+            user_exists = await db.users.exists(user_id)
+        except Exception as e:
+            print(f"Ошибка при проверке существования пользователя {user_id}: {e}")
+            await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+            return
+
+        if user_exists:
             await message.reply(f"Вы уже зарегистрированы.")
             return
 
@@ -90,7 +97,13 @@ async def choose_voice(message: Message, state: FSMContext, db: Database):
         nickname = data.get("nickname")
         language = data.get("language")
 
-        await db.users.add(user_id, gender, nickname, False, language)
+        try:
+            await db.users.add(user_id, gender, nickname, False, language)
+        except Exception as e:
+            print(f"Ошибка при добавлении пользователя {user_id} в базу данных: {e}")
+            await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+            return
+            
         await state.clear()
         await message.reply("Вы зарегистрированы и можете пользоваться полным функционалом бота!")
     elif message.text == "Озвучивать моим голосом":
@@ -141,8 +154,15 @@ async def get_voice(message: Message, state: FSMContext, db: Database, bot: Bot)
         await bot.download_file(telegram_file.file_path, file_path)
 
         # все прошло успешно - отправляем результат в БД
-        await db.users.add(user_id, gender, nickname, True, language)
+        try:
+            await db.users.add(user_id, gender, nickname, True, language)
+        except Exception as e:
+            print(f"Ошибка при добавлении пользователя {user_id} с голосом в базу данных: {e}")
+            await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+            return
+            
         await state.clear()
         await message.reply("Вы зарегистрированы и можете пользоваться полным функционалом бота!")
-    except Exception:
+    except Exception as e:
+        print(f"Ошибка при обработке голосового сообщения: {e}")
         await message.reply("Не удалось обработать голосовое сообщение. Пожалуйста, попробуйте еще раз.")

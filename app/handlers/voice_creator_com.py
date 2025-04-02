@@ -48,12 +48,14 @@ async def cmd_vm(message: Message, db: Database, voice_creator: VoiceCreator):
     except Exception as e:
         # Уменьшаем счетчик в случае ошибки
         await task_counter.decrement()
+        print(f"Ошибка при создании задачи генерации аудио: {e}")
         await message.reply(f"Произошла ошибка при генерации аудио.")
 
 async def process_voice_message_task(message: Message, text_to_say: str, user_id: str, voice_creator: VoiceCreator):
     try:
         await voice_creator.process_voice_message(message, text_to_say, user_id)
     except Exception as e:
+        print(f"Ошибка при обработке голосового сообщения: {e}")
         await message.reply(f"Произошла ошибка при генерации аудио.")
     finally:
         # Уменьшаем счетчик задач
@@ -90,7 +92,12 @@ async def cmd_vd(message: Message, db: Database, voice_creator: VoiceCreator):
         return
 
     try:
-        messages = await db.messages.get_dialogue_messages(replied_message_id, str(message.chat.id), count)
+        try:
+            messages = await db.messages.get_dialogue_messages(replied_message_id, str(message.chat.id), count)
+        except Exception as e:
+            print(f"Ошибка при получении сообщений из базы данных: {e}")
+            await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+            return
 
         if not messages:
             await message.reply("Не удалось найти сообщения для формирования диалога.")
@@ -111,7 +118,8 @@ async def cmd_vd(message: Message, db: Database, voice_creator: VoiceCreator):
     except Exception as e:
         # Уменьшаем счетчик в случае ошибки
         await task_counter.decrement()
-        await message.reply(f"Произошла ошибка при получении сообщений из базы данных.")
+        print(f"Ошибка при обработке команды диалога: {e}")
+        await message.reply(f"Произошла ошибка при обработке запроса.")
 
 async def process_dialogue_task(message: Message, messages: list, voice_creator: VoiceCreator):
     try:
@@ -125,6 +133,7 @@ async def process_dialogue_task(message: Message, messages: list, voice_creator:
         await message.reply_voice(voice_file)
         
     except Exception as e:
+        print(f"Ошибка при генерации аудио для диалога: {e}")
         await message.reply(f"Произошла ошибка при генерации аудио для диалога.")
     finally:
         await task_counter.decrement()
@@ -141,7 +150,12 @@ async def just_message(message: Message, state: FSMContext, db: Database, voice_
         user_id = str(message.from_user.id)
         
         try:
-            user_data = await db.users.get_by_id(user_id)
+            try:
+                user_data = await db.users.get_by_id(user_id)
+            except Exception as e:
+                print(f"Ошибка при получении данных пользователя {user_id}: {e}")
+                await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
+                return
             
             if user_data and user_data.get("vmm"):
                 # Проверка ограничения на длину текста
@@ -165,6 +179,7 @@ async def just_message(message: Message, state: FSMContext, db: Database, voice_
         except Exception as e:
             # Уменьшаем счетчик в случае ошибки
             await task_counter.decrement()
+            print(f"Ошибка при обработке приватного сообщения: {e}")
             await message.reply(f"Произошла ошибка при обработке сообщения.")
 
     elif chat_type in ['group', 'supergroup']:
@@ -180,6 +195,7 @@ async def process_private_voice_message_task(message: Message, user_id: str, voi
     try:
         await voice_creator.process_private_voice_message(message, user_id)
     except Exception as e:
+        print(f"Ошибка при генерации голосового сообщения для пользователя {user_id}: {e}")
         await message.reply(f"Произошла ошибка при генерации голосового сообщения.")
     finally:
         await task_counter.decrement()
