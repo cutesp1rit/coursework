@@ -40,13 +40,27 @@ services:
     working_dir: "/usr/src/app"
     volumes:
       - .:/usr/src/app
-    command: sh -c "PYTHONPATH=/usr/src/app pytest database_vm/test/ -v --cov=. --cov-report=term-missing"
+    command: >
+      sh -c "PYTHONPATH=/usr/src/app pytest
+      app/voice_processing/test/
+      database_vm/test/
+      -v
+      --cov=app/voice_processing
+      --cov=database_vm
+      --cov-report=term-missing"
     env_file:
       - ".env"
     depends_on:
       - db
     networks:
       - tg_bot
+    deploy:
+      resources:
+        limits:
+          memory: 5G
+          cpus: '1.5'
+    environment:
+      - PYTHONUNBUFFERED=1
 
 volumes:
   db_data:
