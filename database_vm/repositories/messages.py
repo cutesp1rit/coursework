@@ -6,10 +6,10 @@ class ChatMessageRepository(Repository):
     async def init_tables(self):
         sql = """
         CREATE TABLE IF NOT EXISTS "chat_messages" (
-            "id" varchar UNIQUE PRIMARY KEY,
-            "chat_id" varchar NOT NULL,
-            "user_id" varchar NOT NULL,
-            "username" varchar,
+            "id" varchar(50) UNIQUE PRIMARY KEY,
+            "chat_id" varchar(20) NOT NULL,
+            "user_id" varchar(20) NOT NULL,
+            "username" varchar(50),
             "message_text" text,
             "created_at" timestamp
         );

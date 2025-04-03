@@ -5,12 +5,12 @@ class UserRepository(Repository):
     async def init_tables(self):
         sql = """
         CREATE TABLE IF NOT EXISTS "users" (
-            "telegram_user_id" varchar UNIQUE PRIMARY KEY NOT NULL,
-            "nickname" varchar,
+            "telegram_user_id" varchar(20) UNIQUE PRIMARY KEY NOT NULL,
+            "nickname" varchar(50),
             "gender" boolean,
             "voice" boolean,
             "vmm" boolean,
-            "language" varchar DEFAULT 'ru'
+            "language" varchar(10) DEFAULT 'ru'
         );
         """
         await self.db.execute(sql)
