@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime
 
 class TestChatMessageRepository:
     @pytest.mark.asyncio

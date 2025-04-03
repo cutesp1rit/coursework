@@ -1,6 +1,5 @@
 import pytest
 from database_vm.database import Database
-import os
 from datetime import datetime
 
 @pytest.fixture
