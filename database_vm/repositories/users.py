@@ -5,7 +5,7 @@ class UserRepository(Repository):
     async def init_tables(self):
         sql = """
         CREATE TABLE IF NOT EXISTS "users" (
-            "telegram_user_id" varchar(20) UNIQUE PRIMARY KEY NOT NULL,
+            "telegram_user_id" bigint UNIQUE PRIMARY KEY NOT NULL,
             "nickname" varchar(50),
             "gender" boolean,
             "voice" boolean,
@@ -18,7 +18,7 @@ class UserRepository(Repository):
     async def drop_tables(self):
         await self.db.execute('DROP TABLE IF EXISTS users CASCADE;')
         
-    async def add(self, user_id: str, gender: bool, nickname: str, voice: bool, language: str = 'ru'):
+    async def add(self, user_id: int, gender: bool, nickname: str, voice: bool, language: str = 'ru'):
         sql = """
         INSERT INTO users (telegram_user_id, gender, nickname, voice, vmm, language)
         VALUES ($1, $2, $3, $4, FALSE, $5)
@@ -32,7 +32,7 @@ class UserRepository(Repository):
         """
         await self.db.execute(sql, user_id, gender, nickname, voice, language)
         
-    async def delete(self, user_id: str):
+    async def delete(self, user_id: int):
         sql = "DELETE FROM users WHERE telegram_user_id = $1;"
         await self.db.execute(sql, user_id)
         
@@ -40,7 +40,7 @@ class UserRepository(Repository):
         sql = "SELECT * FROM users;"
         return await self.db.fetch(sql)
         
-    async def get_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
+    async def get_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
         sql = """
         SELECT telegram_user_id, nickname, gender, voice, vmm, language
         FROM users WHERE telegram_user_id = $1;
@@ -48,27 +48,27 @@ class UserRepository(Repository):
         row = await self.db.fetchrow(sql, user_id)
         return dict(row) if row else None
         
-    async def exists(self, user_id: str) -> bool:
+    async def exists(self, user_id: int) -> bool:
         sql = "SELECT 1 FROM users WHERE telegram_user_id = $1;"
         row = await self.db.fetchrow(sql, user_id)
         return row is not None
         
-    async def update_vmm(self, user_id: str, value: bool):
+    async def update_vmm(self, user_id: int, value: bool):
         sql = "UPDATE users SET vmm = $2 WHERE telegram_user_id = $1;"
         await self.db.execute(sql, user_id, value)
         
-    async def update_nickname(self, user_id: str, nickname: str):
+    async def update_nickname(self, user_id: int, nickname: str):
         sql = "UPDATE users SET nickname = $2 WHERE telegram_user_id = $1;"
         await self.db.execute(sql, user_id, nickname)
         
-    async def update_gender(self, user_id: str, gender: bool):
+    async def update_gender(self, user_id: int, gender: bool):
         sql = "UPDATE users SET gender = $2 WHERE telegram_user_id = $1;"
         await self.db.execute(sql, user_id, gender)
         
-    async def update_voice(self, user_id: str, voice: bool):
+    async def update_voice(self, user_id: int, voice: bool):
         sql = "UPDATE users SET voice = $2 WHERE telegram_user_id = $1;"
         await self.db.execute(sql, user_id, voice)
         
-    async def update_language(self, user_id: str, language: str):
+    async def update_language(self, user_id: int, language: str):
         sql = "UPDATE users SET language = $2 WHERE telegram_user_id = $1;"
         await self.db.execute(sql, user_id, language)

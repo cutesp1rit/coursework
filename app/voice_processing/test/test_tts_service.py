@@ -22,7 +22,7 @@ class TestTTSService:
                 await tts_service.generate_voice(
                     text="Test text",
                     output_path="output.wav",
-                    user_id="user123"
+                    user_id=123456789
                 )
                 
                 # Проверяем вызовы
@@ -41,7 +41,7 @@ class TestTTSService:
             await tts_service.generate_voice(
                 text="Test text",
                 output_path="output.wav",
-                user_id="user123"
+                user_id=123456789
             )
             
             # Проверяем вызовы

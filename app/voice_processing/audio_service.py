@@ -60,7 +60,7 @@ class AudioService:
             except Exception as e:
                 print(f"Ошибка при обработке файла {file_path}: {e}")
                 
-        final_path = os.path.join(self.output_dir, f"chat_{str(chat_id)}_final_dialogue.wav")
+        final_path = os.path.join(self.output_dir, f"chat_{chat_id}_final_dialogue.wav")
         
         try:
             # Экспортируем с пониженным качеством (для ускорения)

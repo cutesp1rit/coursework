@@ -38,7 +38,7 @@ async def cmd_vm(message: Message, db: Database, voice_creator: VoiceCreator):
     else:
         await message.reply("Генерирую аудио для вас...")
     
-    user_id = str(message.reply_to_message.from_user.id)
+    user_id = message.reply_to_message.from_user.id
     
     try:
         await task_counter.increment()
@@ -51,7 +51,7 @@ async def cmd_vm(message: Message, db: Database, voice_creator: VoiceCreator):
         print(f"Ошибка при создании задачи генерации аудио: {e}")
         await message.reply(f"Произошла ошибка при генерации аудио.")
 
-async def process_voice_message_task(message: Message, text_to_say: str, user_id: str, voice_creator: VoiceCreator):
+async def process_voice_message_task(message: Message, text_to_say: str, user_id: int, voice_creator: VoiceCreator):
     try:
         await voice_creator.process_voice_message(message, text_to_say, user_id)
     except Exception as e:
@@ -76,7 +76,7 @@ async def cmd_vd(message: Message, db: Database, voice_creator: VoiceCreator):
         await message.reply("Вы должны использовать эту команду как ответ на сообщение.")
         return
 
-    replied_message_id = str(message.reply_to_message.message_id)
+    replied_message_id = message.reply_to_message.message_id
 
     # парсим + получаем количество сообщений
     try:
@@ -93,7 +93,7 @@ async def cmd_vd(message: Message, db: Database, voice_creator: VoiceCreator):
 
     try:
         try:
-            messages = await db.messages.get_dialogue_messages(replied_message_id, str(message.chat.id), count)
+            messages = await db.messages.get_dialogue_messages(replied_message_id, message.chat.id, count)
         except Exception as e:
             print(f"Ошибка при получении сообщений из базы данных: {e}")
             await message.reply("⚠️ База данных временно недоступна. Пожалуйста, попробуйте позже.")
@@ -123,7 +123,7 @@ async def cmd_vd(message: Message, db: Database, voice_creator: VoiceCreator):
 
 async def process_dialogue_task(message: Message, messages: list, voice_creator: VoiceCreator):
     try:
-        ogg_path = await voice_creator.process_dialogue(messages, str(message.chat.id))
+        ogg_path = await voice_creator.process_dialogue(messages, message.chat.id)
         
         if not ogg_path or not os.path.exists(ogg_path):
             await message.reply("Произошла ошибка при создании аудиофайла.")
@@ -147,7 +147,7 @@ async def just_message(message: Message, state: FSMContext, db: Database, voice_
     chat_type = message.chat.type
 
     if chat_type == 'private':
-        user_id = str(message.from_user.id)
+        user_id = message.from_user.id
         
         try:
             try:
@@ -191,7 +191,7 @@ async def just_message(message: Message, state: FSMContext, db: Database, voice_
     else:
         return
 
-async def process_private_voice_message_task(message: Message, user_id: str, voice_creator: VoiceCreator):
+async def process_private_voice_message_task(message: Message, user_id: int, voice_creator: VoiceCreator):
     try:
         await voice_creator.process_private_voice_message(message, user_id)
     except Exception as e:

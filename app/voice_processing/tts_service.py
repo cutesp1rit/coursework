@@ -31,7 +31,7 @@ class TTSService:
         except Exception as e:
             print(f"Ошибка при инициализации TTS модели: {e}")
     
-    async def generate_voice(self, text: str, output_path: str, user_id: str = None, speaker_wav=None, speaker="Filip Traverse", language="ru", speed=2):
+    async def generate_voice(self, text: str, output_path: str, user_id: int = None, speaker_wav=None, speaker="Filip Traverse", language="ru", speed=2):
         print(f"Generating voice for user: {user_id}")
         try:
             if user_id:

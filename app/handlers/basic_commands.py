@@ -9,7 +9,7 @@ async def cmd_start(message: Message, db: Database):
     chat_type = message.chat.type
 
     if chat_type == 'private':
-        user_id = str(message.from_user.id)
+        user_id = message.from_user.id
         try:
             user_is_registered = await db.users.exists(user_id)
         except Exception as e:
@@ -88,7 +88,7 @@ async def cmd_help(message: Message):
 @commands_router.message(Command('profile'))
 async def cmd_profile(message: Message, db: Database):
     chat_type = message.chat.type
-    user_id = str(message.from_user.id)
+    user_id = message.from_user.id
 
     if chat_type == "private":  # Личный чат
         try:

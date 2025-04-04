@@ -5,20 +5,20 @@ class TestUserRepository:
     async def test_user_crud(self, db):
         """Тест CRUD операций для пользователей"""
         # Создаем пользователя
-        await db.users.add("test_user", True, "Test", False, "en")
+        await db.users.add(123456789, True, "Test", False, "en")
         
         # Читаем данные пользователя
-        user = await db.users.get_by_id("test_user")
+        user = await db.users.get_by_id(123456789)
         assert user["nickname"] == "Test"
         
         # Обновляем никнейм
-        await db.users.update_nickname("test_user", "Updated")
-        updated = await db.users.get_by_id("test_user")
+        await db.users.update_nickname(123456789, "Updated")
+        updated = await db.users.get_by_id(123456789)
         assert updated["nickname"] == "Updated"
         
         # Удаляем пользователя
-        await db.users.delete("test_user")
-        assert await db.users.get_by_id("test_user") is None
+        await db.users.delete(123456789)
+        assert await db.users.get_by_id(123456789) is None
 
     @pytest.mark.asyncio
     async def test_get_all_users(self, db_with_data):
@@ -32,13 +32,13 @@ class TestUserRepository:
     async def test_upsert_behavior(self, db):
         """Тест обновления при конфликте"""
         # Первое добавление пользователя
-        await db.users.add("user1", False, "Original", False)
+        await db.users.add(987654321, False, "Original", False)
         
         # Обновление при повторном добавлении того же пользователя
-        await db.users.add("user1", True, "Updated", True, "fr")
+        await db.users.add(987654321, True, "Updated", True, "fr")
         
         # Проверяем, что данные обновились
-        user = await db.users.get_by_id("user1")
+        user = await db.users.get_by_id(987654321)
         assert user["nickname"] == "Updated"
         assert user["gender"] is True
         assert user["language"] == "fr"
@@ -48,7 +48,7 @@ class TestUserRepository:
     async def test_exists(self, db_with_data):
         """Тест проверки существования пользователя"""
         # Сначала создаем тестового пользователя
-        test_user_id = "test_user_1"
+        test_user_id = 111222333
         await db_with_data.users.add(user_id=test_user_id, nickname="test_user", voice=False, gender=False)
         
         # Проверяем существующего пользователя
@@ -56,13 +56,13 @@ class TestUserRepository:
         assert exists is True
         
         # Проверяем несуществующего пользователя
-        exists = await db_with_data.users.exists("non_existent_user")
+        exists = await db_with_data.users.exists(999888777)
         assert exists is False
 
     @pytest.mark.asyncio
     async def test_update_methods(self, db_with_data):
         """Тест методов обновления данных пользователя"""
-        test_user_id = "test_user_1"
+        test_user_id = 444555666
         
         # Создаем тестового пользователя
         await db_with_data.users.add(user_id=test_user_id, nickname="test_user", voice=False, gender=False)
@@ -97,7 +97,7 @@ class TestUserRepository:
     @pytest.mark.asyncio
     async def test_update_non_existent_user(self, db_with_data):
         """Тест обновления несуществующего пользователя"""
-        non_existent_id = "non_existent_user"
+        non_existent_id = 777888999
         
         # Проверяем, что методы не вызывают ошибок при обновлении несуществующего пользователя
         await db_with_data.users.update_vmm(non_existent_id, True)

@@ -36,14 +36,14 @@ class TestVoiceCreator:
             await voice_creator.process_voice_message(
                 message=mock_message,
                 text="Test text",
-                user_id="user123"
+                user_id=123456789
             )
             
             # Проверяем вызовы
             voice_creator.tts_service.generate_voice.assert_called_once()
             voice_creator.audio_service.convert_wav_to_ogg.assert_called_once()
             mock_message.reply_voice.assert_called_once()
-            mock_remove.assert_called_once_with("/mock/path/user123_cloned.ogg")
+            mock_remove.assert_called_once_with("/mock/path/123456789_cloned.ogg")
 
     @pytest.mark.asyncio
     async def test_process_voice_message_file_not_found(self, voice_creator, mock_message):
@@ -57,7 +57,7 @@ class TestVoiceCreator:
             await voice_creator.process_voice_message(
                 message=mock_message,
                 text="Test text",
-                user_id="user123"
+                user_id=123456789
             )
             
             # Проверяем что было отправлено сообщение об ошибке
@@ -72,19 +72,19 @@ class TestVoiceCreator:
         await voice_creator.handle_group_message(mock_message)
         
         voice_creator.db.messages.add.assert_called_once()
-        voice_creator.db.messages.get_count.assert_called_once_with(str(mock_message.chat.id))
+        voice_creator.db.messages.get_count.assert_called_once_with(mock_message.chat.id)
 
     @pytest.mark.asyncio
     async def test_handle_group_message_with_cleanup(self, voice_creator, mock_message):
         """Тестирует очистку старых сообщений при превышении лимита"""
         voice_creator.db.messages.add = AsyncMock()
         voice_creator.db.messages.get_count = AsyncMock(return_value=1001)
-        voice_creator.db.messages.get_oldest_message_id = AsyncMock(return_value="old_123")
+        voice_creator.db.messages.get_oldest_message_id = AsyncMock(return_value=123456789)
         voice_creator.db.messages.delete = AsyncMock()
         
         await voice_creator.handle_group_message(mock_message)
         
-        voice_creator.db.messages.delete.assert_called_once_with("old_123")
+        voice_creator.db.messages.delete.assert_called_once_with(123456789)
 
     @pytest.mark.asyncio
     async def test_process_private_voice_message_success(self, voice_creator, mock_message):
@@ -97,7 +97,7 @@ class TestVoiceCreator:
             voice_creator.audio_service.convert_wav_to_ogg = AsyncMock()
             mock_message.answer_voice = AsyncMock()
             
-            await voice_creator.process_private_voice_message(mock_message, "user123")
+            await voice_creator.process_private_voice_message(mock_message, 123456789)
             
             mock_message.answer_voice.assert_called_once()
 
@@ -109,7 +109,7 @@ class TestVoiceCreator:
             voice_creator.audio_service.convert_wav_to_ogg = AsyncMock()
             mock_message.reply = AsyncMock()
             
-            await voice_creator.process_private_voice_message(mock_message, "user123")
+            await voice_creator.process_private_voice_message(mock_message, 123456789)
             
             mock_message.reply.assert_called_with("Произошла ошибка при создании аудиофайла.")
 
@@ -131,5 +131,5 @@ class TestVoiceCreator:
             patch.object(voice_creator.audio_service, 'convert_wav_to_ogg',
                         AsyncMock(return_value="test.ogg")):
             
-            result = await voice_creator.process_dialogue([{"user_id": "1"}], "chat123")
+            result = await voice_creator.process_dialogue([{"user_id": 123456789}], 987654321)
             assert result == "test.ogg"

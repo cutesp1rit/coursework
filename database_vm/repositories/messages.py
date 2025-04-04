@@ -6,9 +6,9 @@ class ChatMessageRepository(Repository):
     async def init_tables(self):
         sql = """
         CREATE TABLE IF NOT EXISTS "chat_messages" (
-            "id" varchar(50) UNIQUE PRIMARY KEY,
-            "chat_id" varchar(20) NOT NULL,
-            "user_id" varchar(20) NOT NULL,
+            "id" bigint UNIQUE PRIMARY KEY,
+            "chat_id" bigint NOT NULL,
+            "user_id" bigint NOT NULL,
             "username" varchar(50),
             "message_text" text,
             "created_at" timestamp
@@ -19,7 +19,7 @@ class ChatMessageRepository(Repository):
     async def drop_tables(self):
         await self.db.execute('DROP TABLE IF EXISTS chat_messages CASCADE;')
         
-    async def add(self, message_id: str, chat_id: str, user_id: str, 
+    async def add(self, message_id: int, chat_id: int, user_id: int, 
                  username: str, message_text: str, created_at: datetime):
         sql = """
         INSERT INTO chat_messages (id, chat_id, user_id, username, message_text, created_at)
@@ -27,12 +27,12 @@ class ChatMessageRepository(Repository):
         """
         await self.db.execute(sql, message_id, chat_id, user_id, username, message_text, created_at)
         
-    async def get_count(self, chat_id: str) -> int:
+    async def get_count(self, chat_id: int) -> int:
         sql = "SELECT COUNT(*) FROM chat_messages WHERE chat_id = $1;"
         row = await self.db.fetchrow(sql, chat_id)
         return row["count"] if row else 0
         
-    async def get_oldest_message_id(self, chat_id: str) -> Optional[str]:
+    async def get_oldest_message_id(self, chat_id: int) -> Optional[int]:
         sql = """
         SELECT id FROM chat_messages 
         WHERE chat_id = $1 
@@ -42,11 +42,11 @@ class ChatMessageRepository(Repository):
         row = await self.db.fetchrow(sql, chat_id)
         return row["id"] if row else None
         
-    async def delete(self, message_id: str):
+    async def delete(self, message_id: int):
         sql = "DELETE FROM chat_messages WHERE id = $1;"
         await self.db.execute(sql, message_id)
         
-    async def get_dialogue_messages(self, message_id: str, chat_id: str, count: int) -> List[Dict[str, Any]]:
+    async def get_dialogue_messages(self, message_id: int, chat_id: int, count: int) -> List[Dict[str, Any]]:
         sql = """
         SELECT id, chat_id, user_id, username, message_text, created_at
         FROM chat_messages
@@ -56,4 +56,4 @@ class ChatMessageRepository(Repository):
         ORDER BY created_at ASC
         LIMIT $3;
         """
-        return await self.db.fetch(sql, str(chat_id), str(message_id), count)
+        return await self.db.fetch(sql, chat_id, message_id, count)

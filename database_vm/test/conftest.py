@@ -18,11 +18,11 @@ async def db():
 async def db_with_data(db):
     """Фикстура с тестовыми данными"""
     # Добавляем тестовых пользователей
-    await db.users.add("user1", True, "Alice", False, "en")
-    await db.users.add("user2", False, "Bob", True, "ru")
+    await db.users.add(111222333, True, "Alice", False, "en")
+    await db.users.add(444555666, False, "Bob", True, "ru")
     
     # Добавляем тестовые сообщения
-    await db.messages.add("msg1", "chat1", "user1", "Alice", "Hello", datetime.now())
-    await db.messages.add("msg2", "chat1", "user2", "Bob", "Hi there", datetime.now())
+    await db.messages.add(123456789, 987654321, 111222333, "Alice", "Hello", datetime.now())
+    await db.messages.add(234567890, 987654321, 444555666, "Bob", "Hi there", datetime.now())
     
     return db

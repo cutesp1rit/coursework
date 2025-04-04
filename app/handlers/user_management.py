@@ -13,7 +13,7 @@ async def cmd_vmm(message: Message, db: Database):
     chat_type = message.chat.type
 
     if chat_type == 'private':
-        user_id = str(message.from_user.id)
+        user_id = message.from_user.id
 
         try:
             user_exists = await db.users.exists(user_id)
@@ -44,7 +44,7 @@ async def cmd_stop_vmm(message: Message, db: Database):
     chat_type = message.chat.type
 
     if chat_type == 'private':
-        user_id = str(message.from_user.id)
+        user_id = message.from_user.id
 
         try:
             user_exists = await db.users.exists(user_id)
@@ -75,7 +75,7 @@ async def cmd_delete_data(message: Message, db: Database):
 
     # проверка чата на приватность
     if chat_type == 'private':
-        user_id = str(message.from_user.id)
+        user_id = message.from_user.id
 
         try:
             user_exists = await db.users.exists(user_id)

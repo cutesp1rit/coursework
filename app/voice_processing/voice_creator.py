@@ -21,19 +21,19 @@ class VoiceCreator:
         self.audio_service = AudioService(self.final_output_dir) 
         self.dialogue_service = DialogueService(db, self.tts_service, self.audio_service)
 
-    async def generate_voice_message(self, text: str, user_id: str, output_path: str):
+    async def generate_voice_message(self, text: str, user_id: int, output_path: str):
         await self.tts_service.generate_voice(text, output_path, user_id=user_id)
 
     async def handle_group_message(self, message: Message):
         try:
-            chat_id = str(message.chat.id)
-            user_id = str(message.from_user.id)
+            chat_id = message.chat.id
+            user_id = message.from_user.id
             username = message.from_user.username
             message_text = message.text
             created_at = datetime.now()
 
             await self.db.messages.add(
-                message_id=str(message.message_id),
+                message_id=message.message_id,
                 chat_id=chat_id,
                 user_id=user_id,
                 username=username,
@@ -49,7 +49,7 @@ class VoiceCreator:
         except Exception as e:
             print(f"Ошибка при обработке группового сообщения: {e}")
 
-    async def process_dialogue(self, messages: list, chat_id: str):
+    async def process_dialogue(self, messages: list, chat_id: int):
         """Обрабатывает диалог и создает аудио"""
         try:
             formatted_dialogue = await self.dialogue_service.format_dialogue(messages)
@@ -64,7 +64,7 @@ class VoiceCreator:
             print(f"Ошибка при обработке диалога для чата {chat_id}: {e}")
             return None
 
-    async def process_voice_message(self, message: Message, text: str, user_id: str):
+    async def process_voice_message(self, message: Message, text: str, user_id: int):
         """Обрабатывает команду генерации голосового сообщения"""
         try:
             output_path_wav = os.path.join(self.voice_output_dir, f"{user_id}_cloned.wav")
@@ -86,7 +86,7 @@ class VoiceCreator:
             if os.path.exists(output_path_ogg):
                 os.remove(output_path_ogg)
 
-    async def process_private_voice_message(self, message: Message, user_id: str):
+    async def process_private_voice_message(self, message: Message, user_id: int):
         """Обрабатывает приватное сообщение и генерирует голосовое сообщение"""
         output_path_wav = os.path.join(self.voice_output_dir, f"{user_id}_cloned.wav")
         output_path_ogg = os.path.join(self.voice_output_dir, f"{user_id}_cloned.ogg")

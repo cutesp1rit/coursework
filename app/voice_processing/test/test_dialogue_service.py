@@ -14,9 +14,9 @@ class TestDialogueService:
     async def test_format_dialogue(self, dialogue_service):
         # Подготовка тестовых данных
         test_messages = [
-            {'user_id': 'user1', 'username': 'User1', 'message_text': 'Hello'},
-            {'user_id': 'user2', 'username': 'User2', 'message_text': 'Hi there'},
-            {'user_id': 'user1', 'username': 'User1', 'message_text': 'How are you?'}
+            {'user_id': 111222333, 'username': 'User1', 'message_text': 'Hello'},
+            {'user_id': 444555666, 'username': 'User2', 'message_text': 'Hi there'},
+            {'user_id': 111222333, 'username': 'User1', 'message_text': 'How are you?'}
         ]
         
         # Мокируем вызовы к БД
@@ -31,26 +31,26 @@ class TestDialogueService:
         # Проверяем результат
         assert len(result) == 6  # 3 вступления (для каждого нового сообщения от пользователя) + 3 сообщения
         assert result[0] == (None, "User1 сказал")
-        assert result[1] == ('user1', "Hello")
+        assert result[1] == (111222333, "Hello")
         assert result[2] == (None, "User2 сказала")
-        assert result[3] == ('user2', "Hi there")
+        assert result[3] == (444555666, "Hi there")
         assert result[4] == (None, "User1 сказал")
-        assert result[5] == ('user1', "How are you?")
+        assert result[5] == (111222333, "How are you?")
 
     @pytest.mark.asyncio
     async def test_generate_dialogue_audio(self, dialogue_service):
         test_dialogue = [
             (None, "User1 сказал"),
-            ('user1', "Hello"),
+            (111222333, "Hello"),
             (None, "User2 сказала"),
-            ('user2', "Hi there")
+            (444555666, "Hi there")
         ]
         
         # Мокируем вызовы
         dialogue_service.tts_service.generate_voice = AsyncMock()
         dialogue_service.audio_service.combine_audio_files = MagicMock(return_value="final.wav")
         
-        result = await dialogue_service.generate_dialogue_audio(test_dialogue, "chat123")
+        result = await dialogue_service.generate_dialogue_audio(test_dialogue, 987654321)
         
         # Проверяем результат
         assert result == "final.wav"
@@ -67,7 +67,7 @@ class TestDialogueService:
     async def test_format_dialogue_error_handling(self, dialogue_service):
         """Тестирует обработку ошибок при форматировании"""
         dialogue_service.db.users.get_by_id = AsyncMock(side_effect=Exception("DB error"))
-        result = await dialogue_service.format_dialogue([{"user_id": "1", "message_text": "test"}])
+        result = await dialogue_service.format_dialogue([{"user_id": 123456789, "message_text": "test"}])
         assert result == []
 
     @pytest.mark.asyncio
@@ -76,6 +76,6 @@ class TestDialogueService:
         dialogue_service.tts_service.generate_voice = AsyncMock(side_effect=Exception("TTS error"))
         dialogue_service.audio_service.combine_audio_files = MagicMock()
         
-        result = await dialogue_service.generate_dialogue_audio([("1", "test")], "chat123")
+        result = await dialogue_service.generate_dialogue_audio([(123456789, "test")], 987654321)
         assert result is None        
         dialogue_service.audio_service.combine_audio_files.assert_not_called()

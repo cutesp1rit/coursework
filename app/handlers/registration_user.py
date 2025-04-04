@@ -35,7 +35,7 @@ async def cmd_registration(message: Message, db: Database, state: FSMContext):
     chat_type = message.chat.type
 
     if chat_type == 'private':
-        user_id = str(message.from_user.id)
+        user_id = message.from_user.id
 
         # Проверяем, существует ли пользователь в БД
         try:
@@ -91,7 +91,7 @@ async def get_language(message: Message, state: FSMContext):
 async def choose_voice(message: Message, state: FSMContext, db: Database):
     if message.text == "Озвучивать голосом бота":
         data = await state.get_data()
-        user_id = str(message.from_user.id)
+        user_id = message.from_user.id
 
         gender = data.get("gender")
         nickname = data.get("nickname")
@@ -119,7 +119,7 @@ async def get_voice(message: Message, state: FSMContext, db: Database, bot: Bot)
     try:
         # отправляем данные в бд
         data = await state.get_data()
-        user_id = str(message.from_user.id)
+        user_id = message.from_user.id
         
         gender = data.get("gender")
         nickname = data.get("nickname")

@@ -36,7 +36,7 @@ async def cmd_change_nickname(message: Message, state: FSMContext, db: Database)
         await message.reply("Эта команда доступна только в личных сообщениях.")
         return
         
-    user_id = str(message.from_user.id)
+    user_id = message.from_user.id
     try:
         user_exists = await db.users.exists(user_id)
     except Exception as e:
@@ -54,7 +54,7 @@ async def cmd_change_nickname(message: Message, state: FSMContext, db: Database)
 
 @profile_router.message(ProfileStates.waiting_for_nickname)
 async def process_nickname_change(message: Message, state: FSMContext, db: Database):
-    user_id = str(message.from_user.id)
+    user_id = message.from_user.id
     new_nickname = message.text
     
     try:
@@ -73,7 +73,7 @@ async def cmd_change_gender(message: Message, state: FSMContext, db: Database):
         await message.reply("Эта команда доступна только в личных сообщениях.")
         return
         
-    user_id = str(message.from_user.id)
+    user_id = message.from_user.id
     try:
         user_exists = await db.users.exists(user_id)
     except Exception as e:
@@ -94,7 +94,7 @@ async def process_gender_change(message: Message, state: FSMContext, db: Databas
         await message.reply("Пожалуйста, выберите М или Ж")
         return
         
-    user_id = str(message.from_user.id)
+    user_id = message.from_user.id
     new_gender = False if message.text.upper() == "М" else True
     
     try:
@@ -113,7 +113,7 @@ async def cmd_change_voice(message: Message, state: FSMContext, db: Database):
         await message.reply("Эта команда доступна только в личных сообщениях.")
         return
         
-    user_id = str(message.from_user.id)
+    user_id = message.from_user.id
     try:
         user_exists = await db.users.exists(user_id)
     except Exception as e:
@@ -130,7 +130,7 @@ async def cmd_change_voice(message: Message, state: FSMContext, db: Database):
 
 @profile_router.message(ProfileStates.waiting_for_voice)
 async def process_voice_choice(message: Message, state: FSMContext, db: Database):
-    user_id = str(message.from_user.id)
+    user_id = message.from_user.id
     
     if message.text == "Озвучивать голосом бота":
         try:
@@ -152,7 +152,7 @@ async def process_voice_choice(message: Message, state: FSMContext, db: Database
 
 @profile_router.message(ProfileStates.waiting_for_voice_file, F.voice)
 async def process_voice_file(message: Message, state: FSMContext, db: Database, bot: Bot):
-    user_id = str(message.from_user.id)
+    user_id = message.from_user.id
     
     # Проверка длительности голосового сообщения
     duration = message.voice.duration if message.voice else message.audio.duration
@@ -213,7 +213,7 @@ async def cmd_change_language(message: Message, state: FSMContext, db: Database)
         await message.reply("Эта команда доступна только в личных сообщениях.")
         return
         
-    user_id = str(message.from_user.id)
+    user_id = message.from_user.id
     try:
         user_exists = await db.users.exists(user_id)
     except Exception as e:
@@ -236,7 +236,7 @@ async def process_language_change(message: Message, state: FSMContext, db: Datab
         await message.reply("Некорректный код языка. Пожалуйста, выберите из списка доступных.")
         return
         
-    user_id = str(message.from_user.id)
+    user_id = message.from_user.id
     try:
         await db.users.update_language(user_id, language_code)
         await state.clear()
