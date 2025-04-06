@@ -38,7 +38,7 @@ async def main():
 
     # Подключение к базе данных
     await db.connect()
-    await db.drop_all_tables()
+    # await db.drop_all_tables()
     await db.init_tables()
 
     register_all_handlers(dp)
